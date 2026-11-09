@@ -1,0 +1,1241 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>InvoiceFlow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script>try{var __t=localStorage.getItem("if-theme");if(__t)document.documentElement.setAttribute("data-theme",__t)}catch(e){}</script>
+<style>
+:root{
+  color-scheme:light;
+  --bg:#FFFFFF; --paper:#F7F7F8; --surface:#FFFFFF; --hover:#EFEFEF;
+  --ink:#0D0D0D; --muted:#6B6B6B; --text3:#9B9B9B; --rule:#E5E5E5; --rule-soft:#F0F0F0;
+  --brand:#2563EB; --brand-soft:#EFF6FF; --brand-border:#BFDBFE;
+  --primary:#000000; --primary-hover:#1A1A1A; --primary-fg:#FFFFFF;
+  --ok:#16A34A; --ok-bg:#F0FDF4; --warn:#B7791F; --warn-bg:#FFFBEB; --hold:#EA580C; --hold-bg:#FFF7ED;
+  --rej:#DC2626; --rej-bg:#FEF2F2; --esc:#0D0D0D; --esc-bg:#EFEFEF; --info:#6B6B6B; --info-bg:#F7F7F8;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.04); --shadow-md:0 4px 6px rgba(0,0,0,.07),0 2px 4px rgba(0,0,0,.04);
+  --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; --serif:var(--sans);
+  --mono:"JetBrains Mono","Fira Code","Courier New",monospace;
+}
+[data-theme=dark]{
+  color-scheme:dark;
+  --bg:#050505; --paper:#0B0B0B; --surface:#111111; --hover:#171717;
+  --ink:#FFFFFF; --muted:#A1A1AA; --text3:#71717A; --rule:rgba(255,255,255,.09); --rule-soft:rgba(255,255,255,.05);
+  --brand:#60A5FA; --brand-soft:rgba(96,165,250,.1); --brand-border:rgba(96,165,250,.25);
+  --primary:#FFFFFF; --primary-hover:#E4E4E7; --primary-fg:#000000;
+  --ok:#22d79a; --ok-bg:rgba(34,215,154,.09); --warn:#fbbf24; --warn-bg:rgba(251,191,36,.09); --hold:#fb923c; --hold-bg:rgba(251,146,60,.1);
+  --rej:#f87171; --rej-bg:rgba(248,113,113,.09); --esc:#e4e4e7; --esc-bg:rgba(255,255,255,.09); --info:#a1a1aa; --info-bg:rgba(255,255,255,.05);
+  --shadow-sm:0 1px 3px rgba(0,0,0,.5); --shadow-md:0 4px 6px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:var(--sans);font-size:14px;line-height:1.5;color:var(--ink);background:var(--paper);font-variant-numeric:tabular-nums lining-nums}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:4px}
+h1,h2,h3,p,ul,dl,dd{margin:0}
+ul{padding:0;list-style:none}
+.app{display:grid;grid-template-columns:216px minmax(0,1fr);min-height:100vh}
+
+/* ---------- navigation */
+nav.side{position:sticky;top:0;height:100vh;padding:24px 18px;display:flex;flex-direction:column;gap:28px;border-right:1px solid var(--rule);background:var(--surface)}
+.brand h1{font-family:var(--serif);font-size:24px;font-weight:600;letter-spacing:-.01em}
+.brand p{color:var(--muted);font-size:12.5px;margin-top:2px}
+.navlinks{display:flex;flex-direction:column;gap:2px}
+.navlinks button{all:unset;cursor:pointer;padding:8px 10px;border-left:3px solid transparent;color:var(--muted);font-weight:500;border-radius:0 6px 6px 0}
+.navlinks button:hover{color:var(--ink);background:var(--paper)}
+.navlinks button[aria-current=page]{color:var(--ink);border-left-color:var(--brand);background:var(--brand-soft);font-weight:600}
+.navlinks button:focus-visible{outline:2px solid var(--brand);outline-offset:-2px}
+.side .foot{margin-top:auto;display:flex;flex-direction:column;gap:10px;font-size:12.5px;color:var(--muted)}
+.btn{border:1px solid var(--rule);background:var(--surface);border-radius:8px;padding:7px 12px;font-weight:600;transition:background .12s,border-color .12s}
+.btn:hover{background:var(--paper);border-color:#b9c6bf}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn.primary:hover{background:#1a2bb8}
+.btn.ok{background:var(--ok);border-color:var(--ok);color:#fff}
+.btn.ok:hover{background:#15663f}
+.btn.danger{color:var(--rej);border-color:#e3b5b0}
+.btn.danger:hover{background:var(--rej-bg)}
+.btn[disabled]{opacity:.5;cursor:default}
+main{min-width:0;padding:28px 32px 60px}
+.view{display:none}.view.on{display:block}
+.pagehead{margin-bottom:22px}
+.pagehead h2{font-family:var(--serif);font-size:30px;font-weight:600;letter-spacing:-.015em}
+.pagehead p{color:var(--muted);max-width:68ch;margin-top:4px}
+
+/* ---------- process view */
+.process{display:grid;grid-template-columns:288px minmax(0,1fr) 392px;gap:34px;align-items:start}
+.col-title{font-family:var(--serif);font-size:19px;font-weight:600;margin-bottom:10px}
+.drop{display:block;border:1.5px dashed #aebdb5;border-radius:12px;padding:18px 14px;text-align:center;color:var(--muted);cursor:pointer;background:var(--surface);transition:border-color .15s,background .15s}
+.drop:hover,.drop.over{border-color:var(--brand);background:var(--brand-soft);color:var(--ink)}
+.drop b{display:block;color:var(--ink);font-size:14px}
+.drop input{display:none}
+.group{margin-top:22px}
+.group h3{font-size:13px;font-weight:700;color:var(--muted);margin-bottom:4px}
+.scn{all:unset;box-sizing:border-box;display:block;width:100%;cursor:pointer;padding:11px 10px 11px 12px;border-top:1px solid var(--rule-soft);border-left:3px solid transparent}
+.scn:hover{background:var(--surface)}
+.scn:focus-visible{outline:2px solid var(--brand);outline-offset:-2px}
+.scn[aria-pressed=true]{background:var(--surface);border-left-color:var(--brand)}
+.scn .t{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;font-weight:600}
+.scn .t .pill{flex-shrink:0;margin-top:2px}
+.scn .d{color:var(--muted);font-size:12.5px;margin-top:2px}
+.pill{display:inline-block;font-size:11.5px;font-weight:700;padding:1px 8px;border-radius:99px;white-space:nowrap}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}.pill.note{background:var(--ok-bg);color:var(--ok)}
+.pill.hold{background:var(--hold-bg);color:var(--hold)}.pill.rej{background:var(--rej-bg);color:var(--rej)}
+.pill.esc{background:var(--esc-bg);color:var(--esc)}.pill.info{background:var(--info-bg);color:var(--info)}
+.pill.run{background:var(--brand-soft);color:var(--brand)}
+
+/* run tape */
+.runhead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:6px}
+.runhead .fn{font-family:var(--serif);font-size:22px;font-weight:600;overflow-wrap:anywhere}
+.runhead .sub{color:var(--muted);font-size:12.5px}
+.linkbtn{all:unset;cursor:pointer;color:var(--brand);font-weight:600}
+.linkbtn:hover{text-decoration:underline}
+.linkbtn:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.tape{margin-top:14px;position:relative}
+.stage{position:relative;display:grid;grid-template-columns:26px minmax(0,1fr);gap:0 12px;padding-bottom:20px}
+.stage::before{content:"";position:absolute;left:12px;top:24px;bottom:0;width:2px;background:var(--rule)}
+.stage:last-child::before{display:none}
+.marker{width:26px;height:26px;border-radius:50%;border:2px solid #b9c6bf;background:var(--paper);display:grid;place-items:center;font-size:12px;font-weight:700;color:#fff;z-index:1}
+.stage.active .marker{border-color:var(--brand);background:var(--surface);animation:pulse 1.1s ease-in-out infinite}
+.stage.done .marker.pass{background:var(--ok);border-color:var(--ok)}
+.stage.done .marker.warn{background:var(--warn);border-color:var(--warn)}
+.stage.done .marker.hold{background:var(--hold);border-color:var(--hold)}
+.stage.done .marker.reject{background:var(--rej);border-color:var(--rej)}
+.stage.done .marker.escalate{background:var(--esc);border-color:var(--esc)}
+.stage.done .marker.skipped{background:var(--info);border-color:var(--info)}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(36,56,217,.35)}50%{box-shadow:0 0 0 6px rgba(36,56,217,0)}}
+.stage h3{font-size:15px;font-weight:700;line-height:26px;display:flex;gap:10px;align-items:baseline}
+.stage.pending h3{color:#8a978f;font-weight:600}
+.stage .res{font-size:12.5px;font-weight:600}
+.res.pass{color:var(--ok)}.res.warn{color:var(--warn)}.res.hold{color:var(--hold)}.res.reject{color:var(--rej)}.res.escalate{color:var(--esc)}
+.checks{margin-top:2px}
+.check{border-top:1px solid var(--rule-soft)}
+.check:first-child{border-top:0}
+.check>button{all:unset;box-sizing:border-box;width:100%;cursor:pointer;display:grid;grid-template-columns:20px minmax(0,1fr);gap:8px;padding:7px 4px;border-radius:6px}
+.check>button:hover{background:rgba(255,255,255,.7)}
+.check>button:focus-visible{outline:2px solid var(--brand);outline-offset:-2px}
+.check.noev>button{cursor:default}
+.ic{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font-size:10.5px;font-weight:800;margin-top:2px}
+.ic.pass{background:var(--ok-bg);color:var(--ok)}.ic.info{background:var(--info-bg);color:var(--info)}
+.ic.warn{background:var(--warn-bg);color:var(--warn)}.ic.hold{background:var(--hold-bg);color:var(--hold)}
+.ic.reject{background:var(--rej-bg);color:var(--rej)}.ic.escalate{background:var(--esc-bg);color:var(--esc)}
+.check .ct{font-weight:600}
+.check .cm{color:var(--muted);font-size:13px;overflow-wrap:anywhere}
+.check.bad .cm,.check.warn .cm{color:var(--ink)}
+.ev{margin:2px 0 8px 32px;padding:8px 10px;background:var(--surface);border:1px solid var(--rule-soft);border-radius:8px;display:grid;grid-template-columns:max-content minmax(0,1fr);gap:3px 14px;font-size:12.5px}
+.ev dt{color:var(--muted)}.ev dd{overflow-wrap:anywhere}
+.ev table{border-collapse:collapse;width:100%}.ev td,.ev th{padding:2px 8px 2px 0;text-align:left;font-weight:500}
+.ev th{color:var(--muted)}
+
+/* extraction table */
+.extract{margin:6px 0 4px;background:var(--surface);border:1px solid var(--rule);border-radius:10px;overflow:hidden}
+.extract .xh{display:flex;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--rule);font-weight:600;background:#fafcfb}
+.extract table{width:100%;border-collapse:collapse;font-size:13px}
+.extract td,.extract th{padding:5px 12px;border-top:1px solid var(--rule-soft);text-align:left;vertical-align:middle}
+.extract tr:first-child td{border-top:0}
+.extract th{color:var(--muted);font-weight:500;width:34%}
+.extract td.num{text-align:right}
+.miss{color:var(--rej);font-style:italic}
+.conf{display:flex;align-items:center;gap:8px;min-width:92px}
+.conf i{display:block;height:5px;border-radius:3px;background:var(--rule-soft);flex:1;overflow:hidden}
+.conf i b{display:block;height:100%;background:var(--ok)}
+.conf i b.mid{background:var(--warn)}.conf i b.low{background:var(--rej)}
+.conf span{font-size:12px;color:var(--muted);width:34px;text-align:right}
+.extract .lines th{width:auto;font-size:12px}
+.note-tip{font-size:12px;color:var(--muted);padding:6px 12px 8px}
+
+/* decision slip */
+.process>aside{position:sticky;top:20px;align-self:start}
+.slip{background:var(--surface);border:1px solid var(--rule);border-radius:4px 4px 14px 14px;box-shadow:0 1px 0 var(--rule),0 12px 28px -18px rgba(21,33,28,.35);padding:22px 22px 20px;max-height:calc(100vh - 40px);overflow:auto}
+.slip.empty{color:var(--muted);box-shadow:none;background:transparent;border-style:dashed;text-align:left}
+.slip.empty h3{font-family:var(--serif);font-size:19px;color:var(--ink);margin-bottom:4px}
+.stampwrap{display:flex;justify-content:flex-start;padding:6px 0 14px}
+.stamp{display:inline-block;transform:rotate(-3deg);border:3px solid currentColor;border-radius:6px;padding:4px 16px 2px;font-family:var(--serif);font-weight:600;font-size:30px;letter-spacing:.06em;line-height:1.15;text-align:center;box-shadow:inset 0 0 0 2px var(--surface),inset 0 0 0 3.5px currentColor;mix-blend-mode:multiply;opacity:.94}
+.stamp small{display:block;font-family:var(--sans);font-size:11.5px;letter-spacing:.04em;font-weight:700;margin-top:-1px;padding-bottom:3px}
+.stamp.in{animation:softin .9s ease both}
+@keyframes stampin{0%{transform:rotate(-3deg) scale(1.9);opacity:0}70%{opacity:1}100%{transform:rotate(-3deg) scale(1)}}
+.stamp.ok,.stamp.note{color:var(--ok)}.stamp.hold{color:var(--hold)}.stamp.rej{color:var(--rej)}.stamp.esc{color:var(--esc)}
+.slip h3.hl{font-family:var(--serif);font-size:22px;font-weight:600;line-height:1.2;letter-spacing:-.01em}
+.slip .why{margin-top:6px;color:#2b3a33;overflow-wrap:anywhere}
+.slip .meta{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:12px;font-size:12.5px;color:var(--muted)}
+.slip .meta b{color:var(--ink);font-weight:600}
+.slip section{margin-top:18px;padding-top:14px;border-top:1px solid var(--rule)}
+.slip section h4{margin:0 0 8px;font-size:13.5px;font-weight:700}
+.expect{margin-top:10px;font-size:12.5px;padding:6px 10px;border-radius:8px;display:flex;gap:8px;align-items:center}
+.expect.match{background:var(--ok-bg);color:var(--ok)}.expect.miss{background:var(--rej-bg);color:var(--rej)}
+.actions li{display:grid;grid-template-columns:78px minmax(0,1fr);gap:8px;padding:5px 0;border-top:1px solid var(--rule-soft);font-size:13px}
+.actions li:first-child{border-top:0}
+.actions .who{font-weight:700;color:var(--muted)}
+.email{background:var(--paper);border:1px solid var(--rule);border-radius:8px;padding:10px 12px;font-size:12.5px;white-space:pre-wrap;overflow-wrap:anywhere}
+.email .subj{font-weight:700;margin-bottom:6px;display:block}
+.row{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:6px}
+label.f{display:block;font-size:12.5px;color:var(--muted);margin-top:8px}
+.in{width:100%;border:1px solid var(--rule);border-radius:8px;padding:7px 10px;background:var(--surface);margin-top:2px}
+.in:focus{border-color:var(--brand);outline:none;box-shadow:0 0 0 3px var(--brand-soft)}
+.btnrow{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.reviewed{background:var(--info-bg);border-radius:8px;padding:8px 10px;font-size:13px}
+
+/* ledger bar */
+.lbar{height:16px;border-radius:4px;display:flex;overflow:hidden;background:var(--rule-soft);position:relative}
+.lbar i{display:block;height:100%}
+.lbar .b{background:#7d8f86}.lbar .c{background:var(--brand)}.lbar .o{background:repeating-linear-gradient(45deg,var(--rej),var(--rej) 4px,#e07468 4px,#e07468 8px)}
+.lkey{display:grid;grid-template-columns:1fr auto;gap:2px 10px;margin-top:8px;font-size:12.5px}
+.lkey dt{color:var(--muted)}.lkey dd{text-align:right;font-weight:600}
+.sw{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px}
+
+/* dashboard */
+.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border-top:2px solid var(--ink);border-bottom:1px solid var(--rule);margin-bottom:30px;background:var(--surface)}
+.kpi{padding:14px 16px;border-left:1px solid var(--rule)}.kpi:first-child{border-left:0}
+.kpi .n{font-family:var(--serif);font-size:34px;font-weight:600;line-height:1.1;letter-spacing:-.02em}
+.kpi .l{color:var(--muted);font-size:13px;margin-top:2px}
+.dash2{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:40px}
+.panel h3{font-family:var(--serif);font-size:19px;font-weight:600;margin-bottom:10px}
+.panel+.panel{margin-top:30px}
+.bars li{display:grid;grid-template-columns:190px minmax(0,1fr) 28px;gap:10px;align-items:center;padding:4px 0;font-size:13px}
+.bars .bt{height:10px;background:var(--rule-soft);border-radius:5px;overflow:hidden}.bars .bt b{display:block;height:100%;background:var(--brand);border-radius:5px}
+.bars .cnt{text-align:right;font-weight:600}
+.legend{display:flex;gap:16px;font-size:12.5px;color:var(--muted);margin-top:6px}
+table.grid{width:100%;border-collapse:collapse;font-size:13px;background:var(--surface);border:1px solid var(--rule);border-radius:10px;overflow:hidden}
+table.grid th{text-align:left;font-weight:600;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--rule);background:#fafcfb;white-space:nowrap}
+table.grid td{padding:8px 10px;border-top:1px solid var(--rule-soft);vertical-align:middle}
+table.grid tbody tr{cursor:pointer}table.grid tbody tr:hover{background:#f8fbf9}
+table.grid tbody tr:focus-visible{outline:2px solid var(--brand);outline-offset:-2px}
+td.r,th.r{text-align:right}
+.codes{display:flex;gap:4px;flex-wrap:wrap}
+.code{font-size:11.5px;background:var(--info-bg);color:#40504a;border-radius:4px;padding:0 6px;white-space:nowrap}
+.queue li{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid var(--rule-soft);cursor:pointer}
+.queue li:first-child{border-top:0}.queue li:hover b{text-decoration:underline}
+.empty-note{color:var(--muted);padding:6px 0}
+.fine{color:var(--muted);font-size:12px;margin-top:8px}
+
+/* purchase orders */
+.pobar{height:12px;border-radius:3px;background:var(--rule-soft);display:flex;overflow:hidden;min-width:140px}
+.pobar i{display:block;height:100%}.pobar .b{background:var(--ok)}.pobar .p{background:#e6a15a}
+
+/* how it works */
+.doc{max-width:860px}
+.doc section{margin-bottom:34px}
+.doc h3{font-family:var(--serif);font-size:22px;font-weight:600;margin-bottom:8px}
+.doc p{margin-bottom:8px;max-width:72ch}
+.doc ol,.doc ul.bul{margin:6px 0 0 20px;padding:0;list-style:revert}
+.doc li{margin-bottom:4px;max-width:72ch}
+.ladder{display:flex;gap:0;margin:12px 0 4px;flex-wrap:wrap}
+.ladder div{flex:1 1 130px;padding:10px 12px;border-top:4px solid;background:var(--surface);font-size:12.5px}
+.ladder b{display:block;font-size:13.5px}
+.kv{display:grid;grid-template-columns:minmax(150px,max-content) 1fr;gap:6px 22px;font-size:13.5px}
+.kv dt{font-weight:600}
+.toast{position:fixed;right:20px;bottom:20px;background:var(--ink);color:#fff;padding:10px 14px;border-radius:10px;font-weight:500;box-shadow:0 10px 30px -10px rgba(0,0,0,.5);z-index:20;max-width:360px}
+
+@media (max-width:1380px){.process{grid-template-columns:260px minmax(0,1fr) 360px;gap:26px}}
+@media (max-width:1180px){.process{grid-template-columns:minmax(0,1fr)}.process>aside{position:static}.slip{max-height:none}.kpis{grid-template-columns:repeat(2,1fr)}.dash2{grid-template-columns:1fr}}
+@media (max-width:820px){.app{grid-template-columns:1fr}nav.side{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;padding:12px}.navlinks{flex-direction:row;flex-wrap:wrap}.side .foot{margin-top:0}main{padding:18px 14px 50px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+.extract tr[data-ef]{cursor:pointer}
+.extract tr[data-ef]:hover td,.extract tr[data-ef]:hover th{background:var(--brand-soft)}
+.extract tr[data-ef].sel td,.extract tr[data-ef].sel th{background:#fff3b8}
+.extract .loc{margin-left:6px;color:var(--brand);font-size:11px;font-weight:600}
+.evwrap{border-top:1px solid var(--rule);background:#eef2f0;padding:10px;max-height:560px;overflow:auto}
+.evpage{position:relative;max-width:100%;margin:0 auto;box-shadow:0 1px 6px rgba(0,0,0,.18);background:#fff;line-height:0}
+.evpage img{width:100%;height:auto;display:block}
+.evbox{position:absolute;border:1.5px solid rgba(36,56,217,.55);background:rgba(36,56,217,.07);border-radius:2px;pointer-events:none}
+.evbox.sel{border:2px solid #d98b00;background:rgba(255,200,0,.38);box-shadow:0 0 0 3px rgba(255,200,0,.35)}
+.evcap{font-size:12px;color:var(--muted);padding:6px 12px 0;line-height:1.4}
+.extract .xh{flex-wrap:wrap;gap:6px}
+.xh button{white-space:nowrap;border:1px solid var(--rule);background:#fff;border-radius:6px;padding:2px 8px;font-size:12px;font-weight:600;color:var(--brand)}
+
+/* ---------- simplified process view */
+.proc{max-width:880px;margin:0 auto}
+.proc .pagehead{margin-bottom:16px}
+.start{display:flex;flex-direction:column;gap:12px;margin-bottom:22px}
+.start .drop{padding:24px 16px;font-size:14px}
+.start .drop b{display:inline;font-size:15px}
+.try{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.try .lead{color:var(--muted);font-weight:500;margin-right:2px}
+#scenarios{display:contents}
+.try .scn,.try .chip-more{all:unset;box-sizing:border-box;cursor:pointer;display:inline-block;padding:5px 13px;border:1px solid var(--rule);border-radius:99px;background:var(--surface);font-weight:600;font-size:13px;line-height:1.4}
+.try .scn:hover,.try .chip-more:hover{border-color:var(--brand);color:var(--brand)}
+.try .scn[aria-pressed=true]{background:var(--brand);border-color:var(--brand);color:#fff}
+.try .chip-more{color:var(--muted);border-style:dashed}
+.try .scn:focus-visible,.try .chip-more:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.hint{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin:26px 0 0;padding:0;list-style:none;counter-reset:h}
+.hint li{counter-increment:h;color:var(--muted);font-size:13.5px;padding-top:12px;border-top:2px solid var(--rule)}
+.hint li b{display:block;color:var(--ink);font-size:14.5px;margin-bottom:2px}
+.hint li b::before{content:counter(h) ". "}
+.norun #runhead,.norun #steps,.norun #slip,.norun #tape{display:none}
+#v-process:not(.norun) .hint{display:none}
+.runhead{margin-bottom:10px;align-items:center}
+.runhead .rt{display:flex;gap:14px;align-items:center}
+.dot{width:26px;height:26px;border-radius:50%;border:2px solid #b9c6bf;background:var(--paper);display:grid;place-items:center;margin:0 auto 5px;position:relative;z-index:1;font-size:12px;font-weight:700;color:#fff}
+.dot.pass{background:var(--ok);border-color:var(--ok)}.dot.warn{background:var(--warn);border-color:var(--warn)}
+.dot.hold{background:var(--hold);border-color:var(--hold)}.dot.reject{background:var(--rej);border-color:var(--rej)}
+.dot.escalate{background:var(--esc);border-color:var(--esc)}.dot.skipped{background:var(--info);border-color:var(--info)}
+.slip{max-height:none;overflow:visible;margin-bottom:24px;padding:24px 28px}
+.slip.empty{padding:18px 22px}
+.slip .top{display:grid;grid-template-columns:auto minmax(0,1fr);gap:26px;align-items:center}
+.slip .top .stampwrap{padding:0 4px}
+.slip .cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px;margin-top:20px;padding-top:16px;border-top:1px solid var(--rule)}
+.slip .cols.one{grid-template-columns:minmax(0,1fr)}
+.slip .cols section{margin:0;padding:0;border:0}
+details.fold{margin-top:16px;border-top:1px solid var(--rule);padding-top:12px}
+details.fold summary{cursor:pointer;font-weight:700;font-size:13.5px}
+details.fold .email{margin-top:10px}
+.how h3{font-family:var(--serif);font-size:20px;font-weight:600}
+.how>p{color:var(--muted);font-size:13px;margin:2px 0 10px}
+.acc{border:1px solid var(--rule);border-radius:12px;background:var(--surface);overflow:hidden}
+.sg{border-top:1px solid var(--rule-soft)}.sg:first-child{border-top:0}
+.sg>button.sh{all:unset;box-sizing:border-box;width:100%;display:grid;grid-template-columns:26px minmax(0,1fr) auto 14px;gap:12px;align-items:center;padding:12px 16px;cursor:pointer}
+.sg>button.sh:hover{background:#f8fbf9}
+.sg>button.sh:focus-visible{outline:2px solid var(--brand);outline-offset:-2px}
+.sh .st{font-weight:700}.sh .sum{color:var(--muted);font-size:12.5px;font-weight:500;margin-left:10px}
+.sh .res{font-size:12.5px;font-weight:700}
+.sh .chev{color:var(--muted);transition:transform .15s}.sg.open .chev{transform:rotate(90deg)}
+.sg.pending .st{color:#8a978f}
+.sg .body{padding:0 16px 14px 54px}
+.okmark{color:var(--ok);font-weight:800}
+@media (max-width:700px){.slip .top,.slip .cols{grid-template-columns:minmax(0,1fr)}.hint{grid-template-columns:1fr}.step{font-size:11px}}
+
+/* ---------- pages that fit the screen: the page never scrolls, each table scrolls inside its own box */
+body.fit .app{height:100vh;min-height:0}
+body.fit main{height:100vh;overflow:hidden;display:flex;flex-direction:column;padding-bottom:22px}
+body.fit .view.on{flex:1;min-height:0;display:flex;flex-direction:column}
+.fitpage .pagehead{margin-bottom:14px;display:flex;align-items:flex-end;justify-content:space-between;gap:16px}
+.fitpage .pagehead h2{font-size:26px}
+.fitpage .pagehead p{font-size:13px;margin-top:2px}
+.kpis.compact{margin-bottom:14px;flex:none}
+.kpis.compact .kpi{padding:9px 14px}
+.kpis.compact .kpi .n{font-size:24px}
+.kpis.compact .kpi .l{font-size:12px}
+.tblgrid{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,2.1fr) minmax(0,1fr);gap:14px}
+.tblcol{display:grid;grid-template-rows:minmax(0,1.2fr) auto minmax(0,1fr);gap:14px;min-height:0}
+.tblbox{display:flex;flex-direction:column;min-height:0;background:var(--surface);border:1px solid var(--rule);border-radius:10px;overflow:hidden}
+.tblbox>h3{flex:none;display:flex;justify-content:space-between;align-items:baseline;font-family:var(--serif);font-size:16px;font-weight:600;padding:9px 12px;border-bottom:1px solid var(--rule)}
+.tblbox>h3 span{font-family:var(--sans);font-size:12px;font-weight:500;color:var(--muted)}
+.tblbox .scroll{flex:1;min-height:0;overflow:auto}
+.tblbox table.grid{border:0;border-radius:0;width:100%}
+.tblbox table.grid thead th{position:sticky;top:0;z-index:1;box-shadow:0 1px 0 var(--rule)}
+.tblbox table.grid tbody tr:first-child td{border-top:0}
+.tblbox td.none{color:var(--muted);text-align:center;padding:22px 12px;white-space:normal}
+.tblbox table.grid .nowrap{white-space:nowrap}
+.tblbox table.grid td.ell{max-width:125px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tblbox table.grid td,.tblbox table.grid th{padding:7px 8px}
+.tblbox .when{font-size:12.5px}
+.tblbox .pobar{min-width:80px}
+.tblbox .btn{padding:3px 10px;font-size:12.5px}
+.tblbox .sub{display:block;color:var(--muted);font-size:11.5px}
+.pill.added{background:var(--brand-soft);color:var(--brand)}
+.poform{flex:none;background:var(--surface);border:1px solid var(--rule);border-radius:10px;padding:12px 14px;margin-bottom:14px}
+.poform[hidden]{display:none}
+.poform .row{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;align-items:end}
+.poform label.f{margin-top:0}
+.poform .span2{grid-column:span 2}
+.poform .newv{grid-column:1/-1;display:grid;grid-template-columns:2fr 1fr 1fr 1.4fr;gap:10px;padding:10px;background:var(--paper);border-radius:8px}
+.poform .newv[hidden]{display:none}
+.poform .actions{display:flex;align-items:center;gap:12px;margin-top:10px}
+.poform .note{color:var(--muted);font-size:12.5px}
+.poform .err{color:var(--rej);font-size:12.5px;font-weight:600}
+@media (max-width:1000px){body.fit .app{height:auto}body.fit main{height:auto;overflow:visible}.tblgrid{grid-template-columns:1fr}.tblcol{grid-template-rows:auto}.tblbox .scroll{max-height:320px}.poform .row,.poform .newv{grid-template-columns:1fr 1fr}}
+
+/* ---------- run progress: a thermometer that fills steadily, with a circle for each check stage */
+.thermo{position:relative;margin:6px 0 18px}
+.tm-track{position:absolute;left:calc(100% / 14);right:calc(100% / 14);top:9px;height:10px;border-radius:99px;background:var(--rule-soft);box-shadow:inset 0 1px 2px rgba(21,33,28,.12);overflow:hidden}
+.tm-fill{height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,var(--ink),var(--ink));transition:width 1.7s cubic-bezier(.4,0,.2,1),background-color .9s;position:relative}
+.tm-nodes{position:relative;display:flex}
+.tm-node{flex:1;text-align:center;font-size:12.5px;font-weight:600;color:var(--muted);transition:color .4s}
+.tm-node .dot{margin:0 auto 6px;transition:background-color .6s,border-color .6s,box-shadow .6s}
+.tm-node.active,.tm-node.done{color:var(--ink)}
+.tm-node.active .dot{border-color:var(--brand);background:var(--surface);box-shadow:0 0 0 4px var(--brand-soft)}
+@keyframes breathe{0%,100%{box-shadow:0 0 0 0 rgba(36,56,217,.28)}50%{box-shadow:0 0 0 7px rgba(36,56,217,0)}}
+@keyframes popin{0%{transform:scale(.7)}60%{transform:scale(1.18)}100%{transform:scale(1)}}
+.tm-status{margin-top:10px;height:20px;font-size:13px;color:var(--muted);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tm-status span{display:inline-block;animation:softin .6s ease both}
+@keyframes softin{from{opacity:0}to{opacity:1}}
+.tm-status b{color:var(--ink);font-weight:600}
+.tm-el{font-style:normal;color:var(--muted)}
+.dots{display:inline-flex;gap:3px;margin-right:8px;vertical-align:middle}
+.dots i{width:5px;height:5px;border-radius:50%;background:var(--brand);animation:dotb 1.1s ease-in-out infinite}
+.dots i:nth-child(2){animation-delay:.15s}.dots i:nth-child(3){animation-delay:.3s}
+@keyframes dotb{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
+@media (prefers-reduced-motion:reduce){.dots i{animation:none;opacity:.6}}
+.aisum.loading{color:var(--muted)}
+.ailab{display:inline-block;margin-right:8px;padding:1px 8px;border-radius:99px;background:var(--brand-soft);color:var(--brand);font-size:11.5px;font-weight:600;vertical-align:1px}
+.wait{margin-top:6px;font-size:13px;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){.tm-fill{transition:none}.tm-status span,.stamp.in,.fade{animation:none}}
+
+/* ---------- AgentHub look: white first, black for the main action, one blue accent, Inter and JetBrains Mono */
+body{background:var(--bg);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+.brand h1,.pagehead h2,.col-title,.runhead .fn,.slip.empty h3,.slip h3.hl,.kpi .n,.panel h3,.doc h3,.how h3,.tblbox>h3{font-family:var(--sans);font-weight:700;letter-spacing:-.03em}
+.pagehead h2{font-size:28px;letter-spacing:-.035em}
+.fitpage .pagehead h2{font-size:26px}
+.how h3,.doc h3{font-size:18px;letter-spacing:-.02em}
+.tblbox>h3{font-size:14px;letter-spacing:-.01em}
+.kpi .n{font-size:30px;letter-spacing:-.04em}.kpis.compact .kpi .n{font-size:24px}
+/* sidebar */
+nav.side{background:var(--paper);border-right:1px solid var(--rule);padding:0 12px 16px;gap:18px}
+.brand{height:56px;display:flex;align-items:center;gap:10px;margin:0 -12px;padding:0 18px;border-bottom:1px solid var(--rule)}
+.brand::before{content:"";width:22px;height:22px;border-radius:7px;background:var(--primary);flex:none;
+  -webkit-mask:none;box-shadow:inset 0 0 0 5px var(--primary),inset 0 0 0 7px var(--primary-fg)}
+.brand h1{font-size:16px;letter-spacing:-.02em}
+.brand p{display:none}
+.navlinks{gap:2px}
+.navlinks button{border-left:0;border-radius:10px;padding:8px 12px;font-size:13px;font-weight:500}
+.navlinks button:hover{background:var(--hover);color:var(--ink)}
+.navlinks button[aria-current=page]{background:var(--primary);color:var(--primary-fg);font-weight:600}
+.navlinks button:focus-visible{outline-offset:2px}
+/* buttons */
+.btn{border-radius:10px;font-weight:500;background:var(--bg);border:1px solid var(--rule);color:var(--ink)}
+.btn:hover{background:var(--hover);border-color:var(--rule)}
+.btn.primary{background:var(--primary);border-color:var(--primary);color:var(--primary-fg);font-weight:600}
+.btn.primary:hover{background:var(--primary-hover)}
+.btn.ok{background:var(--ok);border-color:var(--ok);color:var(--bg)}
+.btn.ok:hover{filter:brightness(.92);background:var(--ok)}
+.btn.danger{background:var(--rej-bg);color:var(--rej);border-color:color-mix(in srgb,var(--rej) 30%,transparent)}
+.btn.danger:hover{background:var(--rej-bg);filter:brightness(.97)}
+.tblbox .btn{border-radius:8px}
+/* inputs */
+.in{height:38px;padding:0 12px;border-radius:8px;background:var(--bg);border:1px solid var(--rule)}
+textarea.in{height:auto;padding:8px 12px}
+.in:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+.in::placeholder{color:var(--text3)}
+/* cards */
+.slip,.tblbox,.poform,.kpis,.how .acc,.ladder div{border-radius:16px}
+.slip{border-radius:16px;box-shadow:var(--shadow-sm);background:var(--surface)}
+.slip.empty{box-shadow:none;background:transparent}
+.tblbox,.poform{box-shadow:var(--shadow-sm)}
+.kpis{border:1px solid var(--rule);border-top:1px solid var(--rule);background:var(--surface);box-shadow:var(--shadow-sm);overflow:hidden}
+.kpi{border-left:1px solid var(--rule)}
+.kpi .l{color:var(--muted);font-size:12px}
+.drop{border-radius:16px;background:var(--paper);border:1.5px dashed var(--rule)}
+.drop:hover,.drop.over{border-color:var(--brand);background:var(--brand-soft)}
+/* tables */
+table.grid{border-radius:12px}
+table.grid th,.tblbox table.grid thead th{background:var(--paper);color:var(--text3);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em}
+table.grid tbody tr:hover{background:var(--paper)}
+table.grid td{border-top:1px solid var(--rule-soft)}
+table.grid td.r,.tblbox .sub,.code{font-family:var(--mono);font-size:12px}
+.tblbox td b{font-family:var(--mono);font-size:12.5px;font-weight:600}
+.tblbox .sub{font-size:11px}
+.tblbox td.ell .code{display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom}
+.tblbox>h3{border-bottom:1px solid var(--rule)}
+/* badges */
+.pill{font-size:11px;font-weight:600;border:1px solid color-mix(in srgb,currentColor 22%,transparent)}
+.code{background:var(--paper);color:var(--muted);border:1px solid var(--rule);border-radius:6px;padding:0 6px}
+.pill.added{background:var(--brand-soft);color:var(--brand)}
+/* example chips */
+.try .scn,.try .chip-more{border-radius:99px;font-weight:500;background:var(--bg)}
+.try .scn[aria-pressed=true]{background:var(--primary);border-color:var(--primary);color:var(--primary-fg)}
+.try .scn:hover,.try .chip-more:hover{border-color:var(--ink);color:var(--ink)}
+.try .scn[aria-pressed=true]:hover{color:var(--primary-fg)}
+/* decision stamp */
+.stamp{font-family:var(--mono);font-weight:700;font-size:24px;letter-spacing:.08em;border-width:2px;border-radius:10px;padding:8px 16px 6px}
+.stamp small{font-family:var(--sans);font-weight:600}
+.stamp{mix-blend-mode:normal;opacity:1}
+.slip .why{color:var(--ink)}
+/* run progress */
+.dot,.marker{color:var(--bg);border-color:color-mix(in srgb,var(--muted) 45%,transparent);background:var(--bg)}
+.tm-track{background:var(--hover)}
+.tm-node.active .dot{border-color:var(--brand);background:var(--bg)}
+.check>button:hover{background:var(--paper)}
+.pobar{border-radius:99px;background:var(--hover)}.pobar .p{background:var(--hold)}
+.toast{background:var(--primary);color:var(--primary-fg);border-radius:12px}
+.reviewed{background:var(--paper);border:1px solid var(--rule);border-radius:10px}
+.iconbtn{display:inline-flex;place-items:center;justify-content:center;width:38px;padding:0}
+.ghostrow{cursor:pointer}
+.fade{animation:softin .8s ease both}
+.slip.empty{min-height:150px}
+
+/* ---------- top right: sample invoices and how it works */
+.topbar{display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-bottom:14px;flex:none}
+.tblbox #pos table.grid td,.tblbox #pos table.grid th,#pos table.grid td,#pos table.grid th{padding-left:6px;padding-right:6px}
+#pos table.grid td.ell{max-width:108px}
+@media (max-width:1360px){#pos table.grid th:nth-child(9),#pos table.grid td:nth-child(9){display:none}}
+.actcell{display:flex;gap:4px;align-items:center}
+.actcell .delpo{color:#b42318}
+.actcell .btn{height:32px;padding:0 10px;font-size:12.5px}
+.topbar .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;font-size:13px;height:38px;box-sizing:border-box;padding:0 14px;line-height:1}
+.topbar .iconbtn{width:38px;padding:0}
+.topbar .iconbtn svg{width:17px;height:17px}
+.topbar .qm{display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;border:1.5px solid currentColor;font-size:10px;font-weight:700;line-height:1}
+.topbar svg{width:12px;height:12px}
+.menu{position:relative}
+.popover{position:absolute;right:0;top:calc(100% + 8px);width:min(360px,92vw);background:var(--surface);border:1px solid var(--rule);border-radius:16px;box-shadow:0 20px 25px rgba(0,0,0,.1),0 8px 10px rgba(0,0,0,.05);z-index:30;padding:8px;max-height:calc(100vh - 110px);overflow-y:auto}
+.popover[hidden]{display:none}
+.pop-h{padding:8px 12px 6px;font-size:12px;color:var(--muted)}
+.srow{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:10px 12px;border-radius:10px}
+.srow:hover{background:var(--paper)}
+.srow .sinfo{min-width:0}
+.srow b{display:block;font-size:13.5px;font-weight:600}
+.srow .d{display:block;color:var(--muted);font-size:12.5px;margin-top:1px}
+.sact{display:flex;align-items:center;gap:12px;flex:none}
+.sact .ico{display:grid;place-items:center;width:30px;height:30px;border-radius:8px;color:var(--muted)}.sact .ico:hover{background:var(--hover);color:var(--ink)}
+.sact .btn{padding:4px 12px;font-size:12.5px}
+.sfoot{display:flex;justify-content:flex-end;margin-top:4px;padding:10px 12px 6px;border-top:1px solid var(--rule);font-size:12.5px}
+.sfoot a{color:var(--brand);font-weight:600;text-decoration:none}.sfoot a:hover{text-decoration:underline}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:flex-start;justify-content:center;padding:5vh 16px;z-index:40;overflow:auto}
+.overlay[hidden]{display:none}
+.dlg{position:relative;background:var(--surface);border:1px solid var(--rule);border-radius:20px;width:100%;max-width:700px;padding:30px 34px 28px;box-shadow:0 20px 25px rgba(0,0,0,.2)}
+.dlg .x{position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:8px;border:0;background:transparent;color:var(--muted);font-size:20px;line-height:1}
+.dlg .x:hover{background:var(--hover);color:var(--ink)}
+.dlg h2{font-size:24px;font-weight:700;letter-spacing:-.03em}
+.dlg .lead{color:var(--muted);margin:6px 0 4px;max-width:56ch;font-size:14.5px}
+.dlg h3{font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin:24px 0 8px}
+.seven{list-style:none;margin:0;padding:0;display:grid;gap:0}
+.seven li{display:grid;grid-template-columns:96px minmax(0,1fr);gap:12px;padding:8px 0;border-top:1px solid var(--rule-soft);font-size:13.5px}
+.seven li:first-child{border-top:0}
+.seven b{font-weight:600}.seven span{color:var(--muted)}
+.dlg .ladder{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:0}
+.dlg .ladder div{flex:none;background:var(--paper);border-radius:10px;border-top-width:3px;padding:9px 10px;font-size:12px;color:var(--muted)}
+.dlg .ladder b{color:var(--ink);font-size:13px}
+@media (max-width:620px){.dlg .ladder{grid-template-columns:1fr 1fr}.seven li{grid-template-columns:1fr;gap:0}}
+.dlg .kv{font-size:13.5px}
+.dlg .aibox{background:var(--paper);border:1px solid var(--rule);border-radius:12px;padding:12px 14px;font-size:13.5px}
+.dlg .aibox b{font-family:var(--mono);font-size:12.5px}
+.dlg .evp{font-size:13.5px;color:var(--muted)}.dlg .evp b{color:var(--ink)}
+.dlg details{margin-top:18px;font-size:13.5px}.dlg summary{cursor:pointer;color:var(--muted);font-weight:500}
+.dlg .bul{margin:8px 0 0 18px;padding:0;list-style:disc}.dlg .bul li{margin-bottom:4px}
+.dlg .cta{margin-top:22px;display:flex;gap:10px}
+.stale{position:fixed;left:0;right:0;top:0;z-index:60;background:var(--primary);color:var(--primary-fg);padding:9px 16px;font-size:13px;text-align:center}
+.stale[hidden]{display:none}
+.stale code{font-family:var(--mono);font-size:12px;background:rgba(127,127,127,.3);padding:1px 6px;border-radius:5px}
+.ghostrow{cursor:default;display:flex;align-items:center;gap:8px;padding:4px 2px;font-size:12.5px;color:var(--muted)}
+.ghostrow:hover{color:var(--ink)}.ghostrow:focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:6px}
+.dotstat{width:7px;height:7px;border-radius:50%;background:var(--text3);flex:none}.ghostrow.on .dotstat{background:var(--ok)}
+.dlg.sm{max-width:460px;padding:28px 30px 26px}
+.dlg .keyrow{display:flex;gap:8px;margin-top:14px}.dlg .keyrow .in{flex:1;font-family:var(--mono);font-size:12.5px}
+.dlg .keyrow select.in{flex:none;width:130px;font-family:var(--sans);font-size:13px}
+.dlg .kstat{margin-top:14px;font-size:13.5px}.dlg .kstat b{font-weight:600}
+.dlg .kerr{color:var(--rej);font-size:13px;margin-top:8px;min-height:18px}
+.dlg .fine2{color:var(--muted);font-size:12px;margin-top:12px}
+.dlg .fine2 a{color:var(--brand);text-decoration:none}
+#tip{position:fixed;z-index:60;max-width:300px;padding:8px 11px;border-radius:8px;background:var(--ink);color:var(--bg);font-size:12.5px;line-height:1.5;white-space:pre-line;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,.18)}
+.aisum{margin-top:8px;font-size:14px;color:var(--ink);padding-left:10px;border-left:2px solid var(--brand)}
+.fine3{margin-top:8px;font-size:12px;color:var(--muted)}
+.ask{margin-top:22px;padding-top:16px;border-top:1px solid var(--rule)}
+.ask form{display:flex;gap:8px;margin-top:8px}.ask form .in{flex:1;margin-top:0}
+.chips2{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip2{all:unset;box-sizing:border-box;cursor:pointer;font-size:12.5px;padding:4px 11px;border:1px solid var(--rule);border-radius:99px;color:var(--muted)}
+.chip2:hover{border-color:var(--ink);color:var(--ink)}.chip2:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+#askLog .qa{margin-top:12px}.qa .q{font-weight:600;font-size:13.5px}.qa .ans{margin-top:4px;font-size:13.5px;line-height:1.55;color:var(--ink)}
+.srcs{margin-top:6px;font-size:12px;color:var(--muted)}.srcs summary{cursor:pointer}.srcs ul{margin:6px 0 0;padding-left:16px}.srcs li{margin-bottom:4px}
+.docrow{margin-top:12px;font-size:12.5px;color:var(--muted);display:flex;gap:10px;align-items:center;flex-wrap:wrap}.docrow .linkbtn{cursor:pointer}
+.askfab{position:fixed;right:22px;bottom:22px;z-index:40;border:0;cursor:pointer;background:var(--ink);color:var(--bg);font-weight:600;font-size:13.5px;padding:11px 18px;border-radius:99px;box-shadow:0 6px 20px rgba(0,0,0,.2)}
+.askfab:focus-visible{outline:2px solid var(--brand);outline-offset:3px}
+.askpane{position:fixed;right:22px;bottom:22px;z-index:45;width:min(390px,calc(100vw - 24px));height:min(560px,calc(100vh - 44px));display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--rule);border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.2);overflow:hidden}
+.askpane[hidden]{display:none}.askpane header{display:flex;justify-content:space-between;align-items:center;padding:13px 16px;border-bottom:1px solid var(--rule);font-size:14px}
+.x2{all:unset;cursor:pointer;font-size:22px;line-height:1;color:var(--muted);padding:0 4px}.x2:hover{color:var(--ink)}
+.asklog{flex:1;overflow-y:auto;padding:14px 16px}.askempty{color:var(--muted);font-size:13px}
+.askfoot{border-top:1px solid var(--rule);padding:10px 14px 12px}.askfoot form{display:flex;gap:8px;margin-top:8px}.askfoot form .in{flex:1;margin-top:0}
+.asklog .qa{margin-bottom:14px}
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="side" aria-label="Main">
+    <div class="brand"><h1>InvoiceFlow</h1><p>Accounts payable, from PDF to decision</p></div>
+    <div class="navlinks" id="nav">
+      <button data-view="process" aria-current="page">Process an invoice</button>
+      <button data-view="dashboard">Dashboard</button>
+      <button data-view="pos">Purchase orders</button>
+    </div>
+    <div class="foot">
+      <div class="ghostrow" id="aiBtn"><span class="dotstat"></span><span id="llmstat">AI reader</span></div>
+    </div>
+  </nav>
+
+  <main>
+    <div class="topbar">
+      <div class="menu">
+        <button class="btn" id="samplesBtn" type="button" aria-haspopup="true" aria-expanded="false">Sample invoices <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 4.5l3 3 3-3"/></svg></button>
+        <div class="popover" id="samplesMenu" hidden></div>
+      </div>
+      <button class="btn" id="howBtn" type="button"><span class="qm">?</span>How it works</button>
+      <button class="btn iconbtn" id="themeBtn" type="button" aria-label="Switch between light and dark mode" title="Light / dark"><svg id="themeIco" viewBox="0 0 20 20" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></svg></button>
+    </div>
+    <!-- PROCESS -->
+    <section class="view on norun" id="v-process">
+      <div class="proc">
+        <header class="pagehead"><h2>Check an invoice</h2><p>Drop in a vendor invoice. Each check runs in front of you, then you get a decision.</p></header>
+        <div class="start">
+          <label class="drop" id="drop"><b>Drop an invoice here</b> as a PDF or photo, or click to choose one<input type="file" id="file" accept="application/pdf,.pdf,image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"></label>
+        </div>
+        <ol class="hint">
+          <li><b>Add an invoice</b>Upload a PDF or photo, or open Sample invoices.</li>
+          <li><b>Watch it run</b>Seven checks, one at a time.</li>
+          <li><b>Get a decision</b>Pay, hold, reject or escalate.</li>
+        </ol>
+        <div id="runhead"></div>
+        <div id="steps"></div>
+        <div id="slip" class="slip empty"></div>
+        <div class="tape" id="tape"></div>
+      </div>
+    </section>
+
+    <!-- DASHBOARD -->
+    <section class="view fitpage" id="v-dashboard">
+      <div class="pagehead"><div><h2>Dashboard</h2><p>Every invoice you have run, counted live. Click a row to replay how it was decided.</p></div></div>
+      <div id="dash" style="flex:1;min-height:0;display:flex;flex-direction:column"></div>
+    </section>
+
+    <!-- POs -->
+    <section class="view fitpage" id="v-pos">
+      <div class="pagehead"><div><h2>Purchase orders</h2><p>The balance on each PO as the process sees it. Only approved invoices use it up. Add a PO and the next invoice that quotes it is checked against it.</p></div><button class="btn primary" id="poAdd" type="button">Add a purchase order</button></div>
+      <form class="poform" id="poform" hidden autocomplete="off">
+        <div class="row">
+          <label class="f span2">Vendor<select class="in" id="pf-vendor"></select></label>
+          <label class="f">PO number<input class="in" id="pf-num" placeholder="PO-4601"></label>
+          <label class="f span2">What it covers<input class="in" id="pf-desc" placeholder="Forklift servicing, Q1"></label>
+          <label class="f">Value (USD)<input class="in" id="pf-total" inputmode="decimal" placeholder="15000"></label>
+          <label class="f">Valid until<input class="in" id="pf-exp" type="date"></label>
+        </div>
+        <div class="newv" id="pf-newv" hidden>
+          <label class="f">New vendor name<input class="in" id="pf-vname" placeholder="Acme Tools LLC"></label>
+          <label class="f">Tax ID<input class="in" id="pf-vtax" placeholder="12-3456789"></label>
+          <label class="f">Bank, last 4<input class="in" id="pf-vbank" inputmode="numeric" maxlength="4" placeholder="4821"></label>
+          <label class="f">Email (optional)<input class="in" id="pf-vemail" placeholder="ar@acme.example"></label>
+        </div>
+        <div class="actions"><button class="btn primary" type="submit">Add purchase order</button><button class="btn" type="button" id="poCancel">Cancel</button><span class="err" id="pf-err"></span><span class="note">An invoice is matched on the PO number printed on it and the vendor's tax ID.</span></div>
+      </form>
+      <div id="pos" style="flex:1;min-height:0;display:flex;flex-direction:column"></div>
+    </section>
+
+    <!-- HOW -->
+  </main>
+</div>
+<div class="overlay" id="howOv" hidden><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="howT"><button class="x" id="howX" type="button" aria-label="Close">&times;</button><div id="how"></div></div></div>
+<div id="stale" class="stale" hidden>This page is newer than the server it is talking to. Stop the server (Ctrl+C), start it again with <code>uvicorn app.main:app --port 8000 --reload</code>, and refresh.</div>
+<button class="askfab" id="askFab" type="button" hidden>Ask about this invoice</button>
+<aside class="askpane" id="askPane" hidden aria-label="Ask about this invoice">
+  <header><b>Ask about this invoice</b><button class="x2" id="askClose" type="button" aria-label="Close">&times;</button></header>
+  <div class="asklog" id="askLog"><p class="askempty">Ask anything about this invoice. Answers come from its own documents, with sources.</p></div>
+  <div class="askfoot">
+    <div class="chips2"><button type="button" class="chip2" data-askchip="Why was this decision made?">Why this decision?</button><button type="button" class="chip2" data-askchip="What should I do next?">What next?</button><button type="button" class="chip2" data-askchip="Have we paid anything else on this PO?">Other invoices on this PO</button></div>
+    <form id="askForm" autocomplete="off"><input class="in" id="askQ" placeholder="Type a question" maxlength="300"><button class="btn primary" type="submit">Ask</button></form>
+    <div class="docrow"><label class="linkbtn" for="askDoc">Add a document</label><input type="file" id="askDoc" accept=".pdf,.txt,.md" hidden><span id="docList"></span></div>
+  </div>
+</aside>
+<div id="tip" hidden></div>
+<div id="toast" class="toast" hidden></div>
+
+<script>
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const usd = n => n == null ? 'not found' : new Intl.NumberFormat('en-US', {style:'currency', currency:'USD'}).format(n);
+const num2 = n => new Intl.NumberFormat('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}).format(n);
+const human = c => { const s = String(c).toLowerCase().replace(/_/g, ' ').replace(/\bpo\b/g, 'PO'); return s[0].toUpperCase() + s.slice(1); };
+const api = async (url, opts) => { const r = await fetch(url, opts); if (!r.ok) { let m = r.statusText; try { m = (await r.json()).detail || m } catch {} throw new Error(m) } return r.json(); };
+
+const STAGES = [
+  ['ingest','Receive and inspect the file'], ['extract','Read the invoice'], ['validate','Validate fields and arithmetic'],
+  ['vendor','Verify vendor and bank details'], ['duplicates','Scan for duplicates'], ['match','Match to purchase order'], ['decide','Decide']];
+const DEC = {
+  APPROVED:{label:'Approved', stamp:'APPROVED', sub:'', cls:'ok', mark:'pass'},
+  APPROVED_WITH_NOTE:{label:'Approved with note', stamp:'APPROVED', sub:'with a note', cls:'note', mark:'pass'},
+  HOLD:{label:'Hold', stamp:'ON HOLD', sub:'needs a person', cls:'hold', mark:'hold'},
+  REJECTED:{label:'Rejected', stamp:'REJECTED', sub:'do not pay', cls:'rej', mark:'reject'},
+  ESCALATE:{label:'Escalated', stamp:'BLOCKED', sub:'fraud review', cls:'esc', mark:'escalate'}};
+const ICON = {pass:'✓', info:'i', warn:'!', hold:'II', reject:'✕', escalate:'▲'};
+const OUTWORD = {pass:'passed', warn:'noted', hold:'needs review', reject:'failed', escalate:'blocked'};
+const FIELDS = [['vendor_name','Vendor'],['tax_id','Tax ID'],['bank_last4','Bank account (last 4)'],['invoice_number','Invoice number'],['invoice_date','Invoice date'],
+  ['due_date','Due date'],['po_number','PO number'],['subtotal','Subtotal'],['tax','Tax'],['total','Total'],['currency','Currency']];
+const MONEY_F = new Set(['subtotal','tax','total']);
+
+const S = {stageToggle:{}, moreOpen:false, evOpen:false, evField:null, view:'process', runId:null, run:null, events:[], es:null, open:new Set(), samples:[], slipSig:'', cfg:null};
+
+/* ------------------------------------------------------------------ model */
+function buildModel(events) {
+  const m = {stages:{}, extraction:null, decision:null, done:false, review:null, error:null};
+  STAGES.forEach(([k]) => m.stages[k] = {status:'pending', outcome:null, checks:[]});
+  for (const e of events) {
+    const s = m.stages[e.stage];
+    switch (e.type) {
+      case 'stage_start': s.status = 'active'; break;
+      case 'check': s.checks.push(e.payload); break;
+      case 'artifact': m.extraction = e.payload.data; break;
+      case 'stage_done': s.status = 'done'; s.outcome = e.payload.outcome; s.skipped = !!e.payload.skipped; break;
+      case 'decision': m.decision = e.payload; break;
+      case 'review': m.review = e.payload; break;
+      case 'error': m.error = e.payload.message; break;
+      case 'done': m.done = true; break;
+    }
+  }
+  if (m.decision) m.stages.decide.outcome = DEC[m.decision.decision].mark;
+  return m;
+}
+
+/* ------------------------------------------------------------------ rendering: tape */
+function valHtml(v) {
+  if (v == null) return '<span class="miss">none</span>';
+  if (Array.isArray(v)) {
+    if (v.length && typeof v[0] === 'object') {
+      const ks = Object.keys(v[0]).filter(k => typeof v[0][k] !== 'object');
+      return `<table><tr>${ks.map(k => `<th>${esc(k.replace(/_/g, ' '))}</th>`).join('')}</tr>${v.map(r => `<tr>${ks.map(k => `<td>${esc(typeof r[k] === 'number' && !Number.isInteger(r[k]) ? +r[k].toFixed(3) : r[k])}</td>`).join('')}</tr>`).join('')}</table>`;
+    }
+    return esc(v.join(', '));
+  }
+  if (typeof v === 'object') return esc(JSON.stringify(v));
+  if (typeof v === 'number') return esc(Number.isInteger(v) ? v : +v.toFixed(4));
+  return esc(v);
+}
+function evidenceHtml(ev) {
+  const ks = Object.keys(ev || {});
+  if (!ks.length) return '';
+  return `<dl class="ev">${ks.map(k => `<dt>${esc(k.replace(/_/g, ' '))}</dt><dd>${valHtml(ev[k])}</dd>`).join('')}</dl>`;
+}
+function confBar(c) {
+  const p = Math.round((c || 0) * 100);
+  const cls = p >= 85 ? '' : p >= 70 ? 'mid' : 'low';
+  return `<div class="conf"><i><b class="${cls}" style="width:${p}%"></b></i><span>${p}%</span></div>`;
+}
+function extractionHtml(x) {
+  const f = x.fields;
+  const rows = FIELDS.map(([k, label]) => {
+    const fv = f[k] || {};
+    let v = fv.value;
+    const shown = v == null ? `<span class="miss">${esc(fv.note || 'not found')}</span>` : MONEY_F.has(k) ? esc(num2(v)) : esc(v);
+    const why = fv.source === 'human correction' ? ' (corrected by a reviewer)' : fv.source === 'assumed' ? ' (assumed, none printed)' : '';
+    const has = !!fv.box;
+    return `<tr${has ? ` data-ef="${k}"` : ''} class="${S.evField === k ? 'sel' : ''}"${has ? ' title="Show where this was read on the invoice"' : ''}><th>${esc(label)}</th><td>${shown}<span style="color:var(--muted)">${esc(why)}</span></td><td>${v == null ? '' : (fv.confidence >= 0.9 ? '<span class="okmark" title="Read with high confidence">&#10003;</span>' : confBar(fv.confidence))}</td></tr>`;
+  }).join('');
+  const boxes = FIELDS.filter(([k]) => f[k] && f[k].box).map(([k]) => [k, f[k].box]);
+  const selBox = S.evField && f[S.evField] && f[S.evField].box;
+  const pg = selBox ? selBox.page : 0;
+  const viewer = S.evOpen && S.runId ? `<div class="evcap">${selBox ? 'Highlighted: <b>' + esc((FIELDS.find(x => x[0] === S.evField) || [0, S.evField])[1]) + '</b>. Click any row above to move the highlight.' : 'Every box is a value that was read. Click a row above to see exactly where it came from.'}</div><div class="evwrap"><div class="evpage"><img alt="The invoice page" src="/api/runs/${S.runId}/page/${pg}.png">${boxes.filter(([, b]) => b.page === pg).map(([k, b]) => `<i class="evbox ${k === S.evField ? 'sel' : ''}" style="left:${b.x * 100}%;top:${b.y * 100}%;width:${b.w * 100}%;height:${b.h * 100}%"></i>`).join('')}</div></div>` : '';
+  const lines = (x.lines || []).length ? `<table class="lines"><tr><th>Line item</th><th class="num">Qty</th><th class="num">Unit</th><th class="num">Amount</th></tr>${x.lines.map(l => `<tr><td>${esc(l.description)}</td><td class="num">${esc(l.qty)}</td><td class="num">${esc(num2(l.unit_price))}</td><td class="num">${esc(num2(l.amount))}</td></tr>`).join('')}</table>` : '';
+  const how = x.method === 'ocr' ? `Scanned image, read with OCR (${Math.round((x.ocr_confidence || 0) * 100)}% average confidence)` : x.method === 'digital' ? 'Digital PDF, text read directly' : 'No text read';
+  const llm = x.llm && x.llm.status === 'ok' ? 'Second reader on' : 'Second reader off';
+  return `<div class="extract"><div class="xh"><span>What was read</span><span style="display:flex;gap:8px;align-items:center"><button data-evtoggle type="button">${S.evOpen ? 'Hide invoice' : 'Show on invoice'}</button><span class="pill info">${esc(how)}</span></span></div><table>${rows}</table>${viewer}${lines}${x.llm && x.llm.status === 'ok' ? '<div class="note-tip">A second reader cross-checked these values.</div>' : ''}</div>`;
+}
+function checkHtml(c, key, open) {
+  const hasEv = c.evidence && Object.keys(c.evidence).length;
+  const bad = ['hold','reject','escalate'].includes(c.outcome) ? 'bad' : c.outcome === 'warn' ? 'warn' : '';
+  return `<li class="check ${bad} ${hasEv ? '' : 'noev'}"><button type="button" data-ev="${esc(key)}" ${hasEv ? `aria-expanded="${open}"` : 'tabindex="-1"'}>
+    <span class="ic ${c.outcome}">${ICON[c.outcome]}</span><span><span class="ct">${esc(c.title)}</span><span class="cm"><br>${esc(c.message)}</span></span></button>${open && hasEv ? evidenceHtml(c.evidence) : ''}</li>`;
+}
+const SHORT = {ingest:'Receive', extract:'Read', validate:'Validate', vendor:'Vendor', duplicates:'Duplicates', match:'PO match', decide:'Decision'};
+const MARK = {pass:'\u2713', warn:'!', hold:'II', reject:'\u2715', escalate:'\u25B2', skipped:'\u2013'};
+function stageMark(s) { return s.status === 'done' ? (s.skipped ? 'skipped' : (s.outcome || 'pass')) : ''; }
+function stageIsOpen(k, s) {
+  if (k in S.stageToggle) return S.stageToggle[k];
+  if (s.status === 'active') return true;
+  return s.status === 'done' && !s.skipped && ['warn','hold','reject','escalate'].includes(s.outcome);
+}
+function renderTape() {
+  const m = buildModel(S.events);
+  const el = $('#tape');
+  if (!S.runId) { el.innerHTML = ''; return; }
+  if (S.run && S.run.status === 'running' && !m.done) { el.innerHTML = ''; return; }
+  const rows = STAGES.filter(([k]) => k !== 'decide').map(([k, title]) => {
+    const s = m.stages[k], open = stageIsOpen(k, s), mark = stageMark(s);
+    const n = s.checks.length;
+    const sum = s.status === 'active' ? 'Checking...' : s.status === 'pending' ? '' : s.skipped ? 'Skipped' : `${n} check${n === 1 ? '' : 's'}`;
+    const res = s.status === 'done' && !s.skipped ? `<span class="res ${s.outcome}">${OUTWORD[s.outcome] || ''}</span>` : '<span></span>';
+    const body = open ? `<div class="body"><ul class="checks">${s.checks.map((c, i) => checkHtml(c, `${k}:${i}`, S.open.has(`${k}:${i}`))).join('')}</ul>${k === 'extract' && m.extraction ? extractionHtml(m.extraction) : ''}</div>` : '';
+    return `<div class="sg ${s.status} ${open ? 'open' : ''}" data-stage="${k}"><button class="sh" type="button" data-stage-toggle="${k}" aria-expanded="${open}"><span class="dot ${mark}">${MARK[mark] || ''}</span><span><span class="st">${esc(title)}</span><span class="sum">${esc(sum)}</span></span>${res}<span class="chev">&#8250;</span></button>${body}</div>`;
+  }).join('');
+  const fresh = S.tapeRun !== S.runId && S.liveRun === S.runId; S.tapeRun = S.runId;
+  el.innerHTML = `<div class="how${fresh ? ' fade' : ''}"><h3>How it decided</h3><p>Steps that need attention are open. Click any step to see its checks and the evidence behind them.</p><div class="acc">${rows}</div></div>` + (m.error ? `<p class="miss">${esc(m.error)}</p>` : '');
+}
+function stageText(m) {
+  if (m.error) return `<b>Something went wrong.</b> ${esc(m.error)}`;
+  const i = STAGES.findIndex(([k]) => m.stages[k].status === 'active');
+  if (i >= 0) return `Step ${i + 1} of ${STAGES.length} &middot; <b>${esc(STAGES[i][1])}</b><i class="tm-el"></i>`;
+  if (m.done) return '<b>All checks finished.</b>';
+  return STAGES.some(([k]) => m.stages[k].status === 'done') ? null : 'Starting...';
+}
+function renderSteps() {
+  const el = $('#steps');
+  if (!S.runId || !S.events.length) { el.innerHTML = ''; S.thermoRun = null; return; }
+  const m = buildModel(S.events);
+  let t = $('.thermo', el);
+  const fresh = !t || S.thermoRun !== S.runId;
+  if (fresh) {
+    el.innerHTML = `<div class="thermo"><div class="tm-track"><div class="tm-fill"></div></div><div class="tm-nodes">${STAGES.map(([k]) => `<div class="tm-node" data-k="${k}"><span class="dot"></span>${SHORT[k]}</div>`).join('')}</div><div class="tm-status" aria-live="polite"></div></div>`;
+    t = $('.thermo', el); S.thermoRun = S.runId;
+  }
+  // circles: pending, active or finished with a real result
+  STAGES.forEach(([k], i) => {
+    const n = $(`.tm-node[data-k="${k}"]`, t), s = m.stages[k], mark = stageMark(s), d = $('.dot', n);
+    n.classList.toggle('active', s.status === 'active'); n.classList.toggle('done', s.status === 'done');
+    d.className = 'dot ' + mark; d.textContent = MARK[mark] || '';
+  });
+  // the bar: creeps steadily towards the stage being worked on, and fills when the run is finished
+  const act = STAGES.findIndex(([k]) => m.stages[k].status === 'active');
+  const lastDone = STAGES.reduce((a, [k], i) => m.stages[k].status === 'done' ? i : a, -1);
+  const finished = m.done || (S.run && S.run.status !== 'running' && !S.es && m.stages.decide.status === 'done');
+  const p = finished ? 6 : Math.min(6, (act >= 0 ? act : Math.max(lastDone, 0)) + (act >= 0 || lastDone >= 0 ? 0.72 : 0));
+  const fill = $('.tm-fill', t), w = (p / 6 * 100).toFixed(1) + '%';
+  if (fresh) { fill.style.transition = 'none'; fill.style.width = (finished ? '100%' : (Math.max(act, lastDone, 0) / 6 * 100).toFixed(1) + '%'); void fill.offsetWidth; fill.style.transition = ''; }
+  fill.style.width = w;
+  t.classList.toggle('finished', !!finished);
+  const eff = S.run && (S.run.effective_decision || S.run.decision) || (m.decision && m.decision.decision);
+  ['ok', 'hold', 'rej', 'esc'].forEach(c => t.classList.remove('res-' + c));
+  if (finished && eff && DEC[eff]) t.classList.add('res-' + ({note:'ok'}[DEC[eff].cls] || DEC[eff].cls));
+  const st = $('.tm-status', t), txt = stageText(m);
+  if (txt !== null && st.dataset.t !== txt) { st.dataset.t = txt; st.innerHTML = `<span>${txt}</span>`; }
+}
+const HINTS = {ingest:'Receiving the file', extract:'Reading the document. Photos and scans take longer, up to about 30 seconds',
+  validate:'Checking the fields and the arithmetic', vendor:'Checking the vendor against the register', duplicates:'Looking for repeats',
+  match:'Matching the invoice to its purchase order', decide:'Writing the decision'};
+function tickWait() {
+  const k = S.run && S.run.status === 'running' && S.activeStage;
+  const secs = Math.max(0, Math.round((Date.now() - (S.stageT || Date.now())) / 1000));
+  const el = $('.tm-el'); if (el) el.textContent = k && secs >= 2 ? ` \u00b7 ${secs}s` : '';
+  const w = $('#waitHint');
+  if (w) w.textContent = k ? (HINTS[k] || '') + (secs >= 12 ? '. Still working, the AI reader is slower on scans.' : '.') : '';
+}
+function tickAsk() {
+  const h = S.askHist[S.runId] || [], it = h.find(x => x.t0);
+  const all = document.querySelectorAll('#askLog .askwait');
+  if (!it || !all.length) return;
+  const secs = Math.round((Date.now() - it.t0) / 1000);
+  all[all.length - 1].textContent = secs < 3 ? 'Looking through the documents' : secs < 12 ? 'Writing the answer' + (secs >= 5 ? ` \u00b7 ${secs}s` : '') : `Still working \u00b7 ${secs}s. The AI is slower than usual`;
+}
+setInterval(() => { tickWait(); tickAsk(); }, 1000);
+function renderHead() {
+  const el = $('#runhead');
+  if (!S.run) { el.innerHTML = ''; return; }
+  const r = S.run, running = r.status === 'running';
+  const hsig = r.id + r.status + (r.file_path ? 1 : 0);
+  if (el.dataset.sig === hsig) return; el.dataset.sig = hsig;
+  const st = running ? '<span class="pill run">Running</span>' : r.status === 'error' ? '<span class="pill rej">Error</span>' : '<span class="pill ok">Finished</span>';
+  const pdf = r.file_path ? `<a class="linkbtn" href="/api/runs/${esc(r.id)}/pdf" target="_blank" rel="noopener">View the PDF</a>` : '';
+  el.innerHTML = `<div class="runhead"><div class="fn">${esc(r.filename)}</div><div class="rt">${st}${pdf}</div></div>`;
+}
+
+/* ------------------------------------------------------------------ rendering: decision slip */
+function ledgerBar(c) {
+  const total = c.po_total, before = c.billed_before, cur = c.this_invoice;
+  const max = Math.max(total, c.cumulative_after);
+  const within = Math.max(0, Math.min(cur, total - before)), over = cur - within;
+  const w = x => (x / max * 100).toFixed(2) + '%';
+  return `<div class="lbar" role="img" aria-label="PO usage"><i class="b" style="width:${w(before)}"></i><i class="c" style="width:${w(within)}"></i><i class="o" style="width:${w(over)}"></i></div>
+  <dl class="lkey"><dt><span class="sw" style="background:#7d8f86"></span>Already billed (${c.prior_invoices} invoice${c.prior_invoices === 1 ? '' : 's'})</dt><dd>${usd(before)}</dd>
+  <dt><span class="sw" style="background:var(--brand)"></span>This invoice, within the PO</dt><dd>${usd(within)}</dd>
+  ${over > 0.005 ? `<dt><span class="sw" style="background:var(--rej)"></span>This invoice, over the PO</dt><dd style="color:var(--rej)">${usd(over)}</dd>` : ''}
+  <dt>PO value</dt><dd>${usd(total)}</dd><dt>Left on the PO after this</dt><dd>${usd(Math.max(0, c.remaining_after))}</dd></dl>`;
+}
+function slipHtml(m) {
+  const r = S.run, d = m.decision;
+  const info = DEC[d.decision];
+  const eff = r.final_decision;
+  let h = `<div class="top"><div class="stampwrap"><div class="stamp ${info.cls} in">${info.stamp}${info.sub ? `<small>${info.sub}</small>` : ''}</div></div><div><h3 class="hl">${esc(d.headline)}</h3><p class="why">${esc(d.explanation)}</p><p class="aisum" id="aiSum" hidden></p></div></div>`;
+  if (new URLSearchParams(location.search).has('debug') && r.expected_decision) {
+    const ok = r.expected_decision === d.decision;
+    h += `<div class="expect ${ok ? 'match' : 'miss'}">${ok ? '&#10003;' : '&#10005;'} Example expected ${esc(DEC[r.expected_decision].label.toLowerCase())}, got ${esc(info.label.toLowerCase())}.</div>`;
+  }
+  if (eff) {
+    h += `<section style="margin-top:16px"><div class="reviewed"><b>Reviewed: ${eff === 'APPROVED' ? 'approved for payment' : 'rejected'}.</b><br>${esc(r.reviewer_note || '')}</div></section>`;
+  }
+  const next = d.actions && d.actions.length ? `<section><h4>What happens next</h4><ul class="actions">${d.actions.map(a => `<li><span class="who">${esc(a.owner)}</span><span>${esc(a.action)}</span></li>`).join('')}</ul></section>` : '';
+  const po = d.po ? `<section><h4>Purchase order ${esc(d.po.number)}</h4><p style="color:var(--muted);font-size:13px;margin-bottom:8px">${d.po.how === 'inferred' ? `Not stated on the invoice. Inferred with ${Math.round(d.po.confidence * 100)}% confidence.` : 'Quoted on the invoice.'}</p>${d.cumulative ? ledgerBar(d.cumulative) : ''}</section>` : '';
+  if (next || po) h += `<div class="cols ${next && po ? '' : 'one'}">${next}${po}</div>`;
+  if (d.email) {
+    h += `<details class="fold" id="emailBox"><summary>${d.email.internal ? 'Internal alert' : 'Email to the vendor'}</summary>
+      <label class="f">To<input class="in" id="em-to" type="email" placeholder="name@company.com" value="${esc(/^[^@\s]+@[^@\s]+\.\w{2,}$/.test(d.email.to) ? d.email.to : '')}"></label>
+      <label class="f">Subject<input class="in" id="em-sub" value="${esc(d.email.subject)}"></label>
+      <label class="f">Message<textarea class="in" id="em-body" rows="9">${esc(d.email.body)}</textarea></label>
+      <div class="btnrow"><button class="btn primary" type="button" data-mailto="1">Open in mail app</button><button class="btn" type="button" data-copy="1">Copy</button></div></details>`;
+  }
+  const canFix = !eff && d.decision === 'HOLD' && (d.reason_codes.some(c => c.startsWith('MISSING_') || c === 'LOW_CONFIDENCE'));
+  if (canFix) {
+    const f = m.extraction ? m.extraction.fields : {};
+    const v = k => esc(f[k] && f[k].value != null ? f[k].value : '');
+    h += `<details class="fold"><summary>Fix the fields and re-run</summary><p style="color:var(--muted);font-size:13px;margin-top:8px">Type what the PDF actually says. The whole check runs again using your values.</p>
+      <label class="f">Invoice number<input class="in" id="fx-invoice_number" value="${v('invoice_number')}"></label>
+      <label class="f">Invoice date<input class="in" id="fx-invoice_date" type="date" value="${v('invoice_date')}"></label>
+      <label class="f">Total<input class="in" id="fx-total" inputmode="decimal" value="${v('total')}"></label>
+      <label class="f">PO number<input class="in" id="fx-po_number" value="${v('po_number')}"></label>
+      <div class="btnrow"><button class="btn primary" data-reprocess="1">Apply and re-run</button></div></details>`;
+  }
+  if (!eff && (d.decision === 'HOLD' || d.decision === 'ESCALATE')) {
+    h += `<section style="margin-top:18px;padding-top:14px;border-top:1px solid var(--rule)"><h4>Your decision</h4><label class="f" style="margin-top:0">Note for the audit trail<input class="in" id="rv-note" placeholder="Why are you deciding this?"></label>
+      <div class="btnrow"><button class="btn ok" data-review="approve">${d.decision === 'ESCALATE' ? 'Approve after verification' : 'Approve for payment'}</button><button class="btn danger" data-review="reject">Reject invoice</button></div></section>`;
+  }
+  return h;
+}
+function renderSlip() {
+  const el = $('#slip');
+  const m = buildModel(S.events);
+  const sig = JSON.stringify([S.runId, m.decision && m.decision.decision, S.run && S.run.final_decision, S.run && S.run.reviewer_note, !!(m.decision), m.done]);
+  if (sig === S.slipSig) return;
+  S.slipSig = sig;
+  if (!S.run) { el.className = 'slip empty'; el.innerHTML = ''; return; }
+  if (m.decision && (m.done || S.run.status !== 'running')) { el.className = 'slip'; el.innerHTML = slipHtml(m); if (S.stampRun === S.runId) $$('.stamp.in', el).forEach(x => x.classList.remove('in')); S.stampRun = S.runId; return; }
+  if (S.run.status === 'done' && S.run.decision) {
+    const info = DEC[S.run.decision];
+    el.className = 'slip';
+    el.innerHTML = `<div class="stampwrap"><div class="stamp ${info.cls}">${info.stamp}${info.sub ? `<small>${info.sub}</small>` : ''}</div></div><h3 class="hl">${esc(info.label)}</h3><p class="why">${esc(S.run.summary || '')}</p>
+      <div class="meta"><span>${esc(S.run.vendor_name || '')}</span><span><b>${esc(S.run.invoice_number || '')}</b></span><span><b>${usd(S.run.total)}</b></span></div>
+      ${S.run.final_decision ? `<section><div class="reviewed"><b>Reviewed: ${S.run.final_decision === 'APPROVED' ? 'approved for payment' : 'rejected'}.</b></div></section>` : ''}`;
+    return;
+  }
+  el.className = 'slip empty';
+  el.innerHTML = '<h3>Working on it</h3><p>The decision appears here when every check has run.</p><p class="wait" id="waitHint"></p>';
+  tickWait();
+}
+/* ------------------------------------------------------------------ AI help on the result card */
+S.assist = {};
+async function hydrateAssist() {
+  const id = S.runId, fin = !!(id && $('#aiSum'));
+  $('#askFab').hidden = !fin || !$('#askPane').hidden; if (!fin) { $('#askPane').hidden = true; return; }
+  if (S.askShown !== id) { S.askShown = id; paintAsk(); }
+  let a = S.assist[id];
+  if (!a) { const sm = $('#aiSum'); if (sm && !sm.textContent) { sm.hidden = false; sm.classList.add('loading'); sm.innerHTML = '<span class="dots"><i></i><i></i><i></i></span>AI is writing a plain-English summary'; } }
+  if (!a) { try { a = S.assist[id] = await api(`/api/runs/${id}/assist`); } catch (e) { const sm = $('#aiSum'); if (sm) { sm.hidden = true; sm.classList.remove('loading'); } return; } }
+  if (S.runId !== id || !$('#aiSum')) return;
+  const sum = $('#aiSum'); sum.classList.remove('loading'); sum.innerHTML = a.summary ? '<span class="ailab">AI summary</span>' + esc(a.summary) : ''; sum.hidden = !a.summary || a.source !== 'ai';
+  const to = $('#em-to'), body = $('#em-body');
+  if (to && !to.dataset.touched && !to.value && a.email_to) to.value = a.email_to;
+  if (body && !body.dataset.touched && a.email_body) body.value = a.email_body;
+  renderDocs(a.docs || []);
+}
+function renderDocs(docs) { const el = $('#docList'); if (el) el.textContent = docs.length ? docs.map(d => d.filename).join(', ') + ' added' : ''; }
+S.askHist = {};
+function qaHtml(h) { return `<div class="q">${esc(h.q)}</div><div class="ans">${h.html}</div>`; }
+function paintAsk() {
+  const log = $('#askLog'), h = S.askHist[S.runId] || [];
+  log.innerHTML = h.length ? '' : '<p class="askempty">Ask anything about this invoice. Answers come from its own documents, with sources.</p>';
+  h.forEach(x => { const d = document.createElement('div'); d.className = 'qa'; d.innerHTML = qaHtml(x); log.appendChild(d); });
+  log.scrollTop = log.scrollHeight;
+}
+async function askQuestion(q) {
+  q = (q || '').trim(); if (q.length < 3) return;
+  const id = S.runId, h = (S.askHist[id] = S.askHist[id] || []);
+  const item = { q, t0: Date.now(), html: '<span class="dots"><i></i><i></i><i></i></span><span class="askwait">Looking through the documents</span>' }; h.push(item); paintAsk(); $('#askQ').value = '';
+  const btn = $('#askForm button'); if (btn) btn.disabled = true;
+  try {
+    const r = await api(`/api/runs/${id}/ask`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({question:q})});
+    const src = (r.sources || []).map(x => `<li><b>[${x.n}] ${esc(x.label)}</b> ${esc(x.text)}</li>`).join('');
+    item.html = `${r.answer ? esc(r.answer) : esc(r.note || '')}<details class="srcs"><summary>Sources</summary><ul>${src}</ul></details>`;
+  } catch (e) { item.html = esc(e.message); }
+  item.t0 = 0;
+  if (btn) btn.disabled = false;
+  if (S.runId === id) paintAsk();
+}
+function render() { $('#v-process').classList.toggle('norun', !S.runId); renderHead(); renderSteps(); renderTape(); renderSlip(); hydrateAssist(); }
+
+/* ------------------------------------------------------------------ runs and streaming */
+function closeES() { if (S.es) { S.es.close(); S.es = null; } }
+async function openRun(id, goto = true) {
+  closeES();
+  S.runId = id; S.slipSig = ''; S.open = new Set(); S.evField = null; S.stageToggle = {}; S.evOpen = false;
+  if (goto) setView('process');
+  try {
+    const r = await api(`/api/runs/${id}`);
+    S.run = r; S.events = r.events || [];
+    render();
+    if (r.status === 'running') { S.liveRun = id; connect(id); }
+  } catch (e) { toast(e.message); }
+}
+function connect(id) {
+  const last = S.events.length ? S.events[S.events.length - 1].id : 0;
+  const es = new EventSource(`/api/runs/${id}/stream?after=${last}`);
+  S.es = es;
+  ['stage_start','check','artifact','stage_done','decision','review','error','done'].forEach(t => es.addEventListener(t, ev => {
+    if (S.runId !== id) return;
+    const d = JSON.parse(ev.data);
+    S.events.push({id: +ev.lastEventId, type: t, stage: d.stage, payload: d});
+    if (t === 'stage_start') { S.activeStage = d.stage; S.stageT = Date.now(); } else if (t === 'done' || t === 'error') S.activeStage = null;
+    if (t === 'done') { es.close(); S.es = null; refreshRun(); return; }
+    renderSteps();
+  }));
+}
+async function refreshRun() {
+  if (!S.runId) return;
+  try { const r = await api(`/api/runs/${S.runId}`); S.run = r; S.slipSig = ''; render(); } catch (e) {}
+}
+async function startSample(id) {
+  try { const {run_id} = await api(`/api/runs/sample/${id}`, {method:'POST'}); await openRun(run_id); } catch (e) { toast(e.message); }
+}
+async function startUpload(file) {
+  if (!file) return;
+  const fd = new FormData(); fd.append('file', file);
+  try { const {run_id} = await api('/api/runs', {method:'POST', body:fd}); await openRun(run_id); } catch (e) { toast(e.message); }
+}
+
+/* ------------------------------------------------------------------ sample invoices (top right) */
+function renderSamplesMenu() {
+  const dl = '<svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v8M4.5 7 8 10.5 11.5 7M3 13.5h10"/></svg>';
+  const rows = S.samples.map(x => `<div class="srow"><div class="sinfo"><b>${esc(x.title)}</b><span class="d">${esc(x.blurb)}</span></div>
+    <div class="sact"><a class="ico" href="/api/samples/${esc(x.id)}/pdf?download=1" title="Download the PDF" aria-label="Download ${esc(x.title)}">${dl}</a><button class="btn primary" type="button" data-sample="${esc(x.id)}">Run</button></div></div>`).join('');
+  $('#samplesMenu').innerHTML = `${rows}<div class="sfoot"><a href="/api/samples/download.zip">Download all ${S.samples.length}</a></div>`;
+}
+function toggleSamples(open) {
+  const m = $('#samplesMenu'); m.hidden = !open; $('#samplesBtn').setAttribute('aria-expanded', String(open));
+}
+async function loadSamples() {
+  S.samples = await api('/api/samples');
+  renderSamplesMenu();
+}
+
+/* ------------------------------------------------------------------ dashboard */
+const dtime = t => { const d = new Date(t * 1000), same = d.toDateString() === new Date().toDateString(); return same ? d.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'}) : d.toLocaleDateString('en-US', {month:'short', day:'numeric'}); };
+async function renderDash(force) {
+  const box = $('#dash');
+  const keep = $$('.scroll', box).map(x => x.scrollTop);
+  const [st, runs] = await Promise.all([api('/api/stats'), api('/api/runs?limit=500')]);
+  const dsig = JSON.stringify([st, runs.map(r => [r.id, r.status, r.effective_decision, r.final_decision])]);
+  if (!force && dsig === S.dashSig && box.firstChild) return; S.dashSig = dsig;
+  st.by_outcome = st.by_outcome || []; st.top_reasons = st.top_reasons || []; st.review_queue = st.review_queue || [];
+  const none = (cols, msg) => `<tr><td class="none" colspan="${cols}">${msg}</td></tr>`;
+  box.innerHTML = `
+  <div class="kpis compact">
+    <div class="kpi"><div class="n">${st.total}</div><div class="l">Invoices processed</div></div>
+    <div class="kpi"><div class="n">${st.total ? Math.round(st.stp_rate * 100) + '%' : '-'}</div><div class="l">Approved with no human touch</div></div>
+    <div class="kpi"><div class="n">${usd(st.amount_approved).replace('.00', '')}</div><div class="l">Approved for payment</div></div>
+    <div class="kpi"><div class="n">${usd(st.amount_blocked).replace('.00', '')}</div><div class="l">Held, rejected or blocked</div></div>
+    <div class="kpi"><div class="n">${st.total ? (st.avg_processing_ms / 1000).toFixed(1) + ' s' : '-'}</div><div class="l">Average processing time</div></div>
+  </div>
+  <div class="tblgrid">
+    <div class="tblbox"><h3>Recent invoices <span>${runs.length} shown</span></h3><div class="scroll"><table class="grid"><thead><tr><th>When</th><th>Invoice</th><th>Vendor</th><th class="r">Amount</th><th>Outcome</th><th>Reasons</th></tr></thead><tbody>
+      ${runs.length ? runs.map(r => { const e = r.effective_decision || r.decision; const i = e && DEC[e] ? DEC[e] : null;
+        return `<tr tabindex="0" data-run="${esc(r.id)}"><td class="nowrap" title="${esc(new Date(r.created_at * 1000).toLocaleString())}">${esc(dtime(r.created_at))}</td><td class="nowrap">${esc(r.invoice_number || r.filename)}</td><td class="ell" title="${esc(r.vendor_name || '')}">${esc(r.vendor_name || '')}</td><td class="r nowrap">${r.total != null ? esc(num2(r.total)) : ''}</td>
+        <td class="nowrap">${r.status === 'running' ? '<span class="pill run">Running</span>' : i ? `<span class="pill ${i.cls}">${esc(i.label)}</span>${r.final_decision ? ' <span class="code">reviewed</span>' : ''}` : ''}</td>
+        <td class="ell" data-tip="${esc((r.reason_codes || []).map(human).join('\n'))}">${(r.reason_codes || []).length ? esc(human(r.reason_codes[0])) + (r.reason_codes.length > 1 ? ' <span class="sub" style="display:inline">+' + (r.reason_codes.length - 1) + '</span>' : '') : '<span class="sub" style="display:inline">None</span>'}</td></tr>`; }).join('') : none(6, 'No invoices yet. Run one on the Process page and it shows up here.')}
+    </tbody></table></div></div>
+    <div class="tblcol">
+      <div class="tblbox"><h3>Waiting for a person <span>${st.review_queue.length}</span></h3><div class="scroll"><table class="grid"><thead><tr><th>Invoice</th><th>Why</th><th class="r">Amount</th></tr></thead><tbody>
+        ${st.review_queue.length ? st.review_queue.map(q => `<tr tabindex="0" data-run="${esc(q.id)}"><td class="ell" title="${esc(q.vendor_name || '')}"><b>${esc(q.invoice_number || 'No number')}</b><span class="sub">${esc(q.vendor_name || '')}</span></td><td class="ell" style="max-width:110px">${q.codes[0] ? esc(human(q.codes[0])) : ''}</td><td class="r nowrap">${q.total != null ? esc(num2(q.total)) : ''}</td></tr>`).join('') : none(3, 'Nothing is waiting.')}
+      </tbody></table></div></div>
+      <div class="tblbox"><h3>By outcome</h3><div class="scroll"><table class="grid"><thead><tr><th>Outcome</th><th class="r">Invoices</th><th class="r">Amount</th></tr></thead><tbody>
+        ${st.by_outcome.length ? st.by_outcome.map(o => `<tr style="cursor:default"><td><span class="pill ${DEC[o.outcome].cls}">${esc(DEC[o.outcome].label)}</span></td><td class="r">${o.count}</td><td class="r nowrap">${esc(num2(o.amount))}</td></tr>`).join('') : none(3, 'No outcomes yet.')}
+      </tbody></table></div></div>
+      <div class="tblbox"><h3>Why invoices get flagged</h3><div class="scroll"><table class="grid"><thead><tr><th>Reason</th><th class="r">Invoices</th></tr></thead><tbody>
+        ${st.top_reasons.length ? st.top_reasons.map(r => `<tr style="cursor:default"><td>${esc(human(r.code))}</td><td class="r">${r.count}</td></tr>`).join('') : none(2, 'No flags yet.')}
+      </tbody></table></div></div>
+    </div>
+  </div>`;
+  $$('.scroll', box).forEach((x, i) => { if (keep[i]) x.scrollTop = keep[i]; });
+}
+
+/* ------------------------------------------------------------------ purchase orders */
+async function loadVendorOptions(selected) {
+  const vs = (await api('/api/vendors')).filter(v => v.status === 'approved');
+  $('#pf-vendor').innerHTML = vs.map(v => `<option value="${esc(v.id)}">${esc(v.name)} (tax ID ${esc(v.tax_id)})</option>`).join('') + '<option value="__new__">Add a new vendor...</option>';
+  if (selected) $('#pf-vendor').value = selected;
+  $('#pf-newv').hidden = $('#pf-vendor').value !== '__new__';
+}
+function openPoForm(open) {
+  const f = $('#poform'); f.hidden = !open; $('#pf-err').textContent = '';
+  if (open) {
+    if (!$('#pf-exp').value) { const d = new Date(); d.setDate(d.getDate() + 90); $('#pf-exp').value = d.toISOString().slice(0, 10); }
+    loadVendorOptions().catch(e => toast(e.message)); $('#pf-num').focus();
+  }
+}
+async function renderPOs() {
+  const pos = await api('/api/purchase-orders');
+  const box = $('#pos'), keep = $$('.scroll', box).map(x => x.scrollTop);
+  box.innerHTML = `<div class="tblbox" style="flex:1"><h3>All purchase orders <span>${pos.length} in total. Green is billed and approved, orange is held for review and does not reduce what is left.</span></h3><div class="scroll"><table class="grid"><thead><tr><th>PO</th><th>Vendor</th><th>What it covers</th><th class="r">Value</th><th class="r">Billed</th><th class="r">In review</th><th class="r">Left</th><th>Used</th><th>Expires</th><th></th></tr></thead><tbody>
+  ${pos.map(p => `<tr style="cursor:default"><td class="nowrap"><b>${esc(p.po_number)}</b>${p.added ? ' <span class="pill added">added</span>' : ''}</td><td class="ell" title="${esc(p.vendor)}">${esc(p.vendor)}<span class="sub">Tax ID ${esc(p.vendor_tax_id)}</span></td><td class="ell" title="${esc(p.description)}">${esc(p.description)}</td><td class="r nowrap">${esc(num2(p.total))}</td><td class="r nowrap">${esc(num2(p.billed))}</td><td class="r nowrap">${p.pending ? esc(num2(p.pending)) : ''}</td><td class="r nowrap">${esc(num2(p.remaining))}</td>
+  <td><div class="pobar" title="${Math.round(p.pct * 100)}% billed"><i class="b" style="width:${Math.min(100, p.pct * 100)}%"></i><i class="p" style="width:${Math.min(100 - p.pct * 100, p.pending / p.total * 100)}%"></i></div></td><td class="nowrap">${esc(p.expiry)}</td>
+  <td class="nowrap actcell">${p.added ? `<button class="btn delpo" type="button" data-delpo="${esc(p.po_number)}" title="Delete this purchase order">Delete</button>` : ''}</td></tr>`).join('')}</tbody></table></div></div>`;
+  $$('.scroll', box).forEach((x, i) => { if (keep[i]) x.scrollTop = keep[i]; });
+}
+async function submitPO(e) {
+  e.preventDefault();
+  const err = $('#pf-err'); err.textContent = '';
+  const J = body => ({method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+  try {
+    let vid = $('#pf-vendor').value;
+    if (vid === '__new__') {
+      const v = await api('/api/vendors', J({name:$('#pf-vname').value, tax_id:$('#pf-vtax').value, bank_last4:$('#pf-vbank').value, email:$('#pf-vemail').value}));
+      vid = v.id;
+    }
+    const r = await api('/api/purchase-orders', J({po_number:$('#pf-num').value, vendor_id:vid, description:$('#pf-desc').value, total:parseFloat($('#pf-total').value.replace(/,/g, '')) || 0, expiry_date:$('#pf-exp').value}));
+    $('#poform').reset(); openPoForm(false); await renderPOs();
+    toast(`${r.po_number} added. Upload an invoice that quotes it, or press Try an invoice.`);
+  } catch (ex) { err.textContent = ex.message; }
+}
+
+/* ------------------------------------------------------------------ how it works */
+async function fillEval() {
+  const box = $('#evalbox'); if (!box) return;
+  try {
+    const r = await fetch('/api/eval'); if (!r.ok) { box.innerHTML = '<h3>How accurate is the reader</h3><p class="empty-note">The accuracy check is still running. Reload in a minute.</p>'; return; }
+    const e = await r.json(), c = e.clean, s = e.stress, p = x => (x * 100).toFixed(1).replace(/\.0$/, '') + '%';
+    box.innerHTML = `<h3>How accurate is the reader</h3>
+      <p>Scored field by field against the known answers: ${c.fields_scored} fields across ${c.invoices} invoices. These invoices were generated for this exercise, so the first number says the reader handles these layouts, not that it will handle every invoice in the wild. The second is the harder test: every invoice turned into a noisy, skewed, lower-resolution scan.</p>
+      <dl class="kv"><dt>As generated</dt><dd>${p(c.accuracy)} correct</dd>
+      <dt>Degraded scans</dt><dd>${p(s.accuracy)} correct. Average confidence is ${s.mean_confidence_when_right} on correct fields and ${s.mean_confidence_when_wrong} on wrong ones, so low confidence does flag the likely mistakes.</dd>
+      <dt>Located on the page</dt><dd>${p(Object.values(c.per_field).reduce((a, v) => a + (v.located_on_page || 0), 0) / Object.keys(c.per_field).length)} of values can be shown on the invoice.</dd></dl>
+      ${s.wrong.length ? `<p>Where the degraded scans went wrong: ${s.wrong.map(w => esc(w.field.replace(/_/g, ' ')) + ' on ' + esc(w.invoice.replace(/_/g, ' '))).join(', ')}. A wrong figure usually fails the arithmetic check and goes to a person, instead of being paid.</p>` : ''}`;
+  } catch (err) { box.innerHTML = ''; }
+}
+async function fillEval() {
+  const box = $('#evalbox'); if (!box) return;
+  try {
+    const r = await fetch('/api/eval'); if (!r.ok) { box.innerHTML = '<p class="evp">The accuracy check is still running. Reopen this in a minute.</p>'; return; }
+    const e = await r.json(), c = e.clean, s = e.stress, p = x => (x * 100).toFixed(1).replace(/\.0$/, '') + '%';
+    box.innerHTML = `<p class="evp"><b>${p(c.accuracy)}</b> of ${c.fields_scored} fields read correctly across ${c.invoices} generated invoices, and <b>${p(s.accuracy)}</b> after turning them into noisy, skewed scans. Confidence is lower on the wrong fields, so a misread usually goes to a person. These invoices were generated for this exercise, so this is not a claim about invoices in the wild.</p>`;
+  } catch (err) { box.innerHTML = ''; }
+}
+async function renderHow() {
+  const [c, health] = await Promise.all([S.cfg ? S.cfg : api('/api/config'), api('/api/health').catch(() => ({llm: 'off'}))]);
+  S.cfg = c;
+  const pct = x => Math.round(x * 100) + '%';
+  const ai = health.llm && health.llm !== 'off'
+    ? `<b>${esc(health.model)}</b> on ${esc(health.llm === 'groq' ? 'Groq' : 'Anthropic')} is switched on. It reads every invoice a second time. If the rules could not read a field, it can fill it in, but only with text that is written on the page. If the two readers disagree, confidence drops. It never approves or rejects anything.`
+    : `Off right now. Set GROQ_API_KEY and restart the server. The AI would fill in fields the rules could not read, only with text written on the page, and lower confidence when the two readers disagree. It would never approve or reject anything.`;
+  $('#how').innerHTML = `
+  <h2 id="howT">How it works</h2>
+  <p class="lead">A PDF goes in and seven checks run in order. The most serious finding decides what happens next.</p>
+  <h3>The seven checks</h3>
+  <ol class="seven">
+    <li><b>Receive</b><span>Is it a real PDF, and has this exact file been seen before?</span></li>
+    <li><b>Read</b><span>Pull out vendor, tax ID, bank account, numbers, dates and totals. OCR for scans.</span></li>
+    <li><b>Validate</b><span>Required fields are there and the arithmetic adds up.</span></li>
+    <li><b>Vendor</b><span>An approved vendor, with the bank account on file.</span></li>
+    <li><b>Duplicates</b><span>The same number, or the same bill under a new one, within ${c.dup_window_days} days.</span></li>
+    <li><b>PO match</b><span>Find the PO, then track what has been billed against it across invoices.</span></li>
+    <li><b>Decision</b><span>The worst finding wins. You see who does what next.</span></li></ol>
+  <h3>Five outcomes</h3>
+  <div class="ladder">
+    <div style="border-color:var(--ok)"><b>Approved</b>Nothing to flag</div>
+    <div style="border-color:var(--warn)"><b>With note</b>Safe, buyer informed</div>
+    <div style="border-color:var(--hold)"><b>Hold</b>A person decides</div>
+    <div style="border-color:var(--rej)"><b>Rejected</b>Do not pay</div>
+    <div style="border-color:var(--esc)"><b>Escalate</b>Looks like fraud</div></div>
+  <h3>Where AI fits</h3>
+  <div class="aibox">${ai}</div>
+  <h3>Rules you can change</h3>
+  <dl class="kv">
+    <dt>Over the PO</dt><dd>Up to ${pct(c.auto_tolerance_pct)} and ${num2(c.auto_tolerance_abs)}: approve with a note. Up to ${pct(c.review_tolerance_pct)}: a buyer decides. Above: reject.</dd>
+    <dt>Missing PO</dt><dd>Inferred at ${pct(c.implied_po_conf)} confidence, ${pct(c.implied_po_margin)} ahead of the runner-up.</dd>
+    <dt>Field confidence</dt><dd>At least ${pct(c.min_field_confidence)} on invoice number, date, total and vendor.</dd></dl>
+  <h3>How accurate is the reader</h3>
+  <div id="evalbox"></div>
+  <details><summary>Assumptions and what comes next</summary>
+    <ul class="bul">
+      <li>Amounts are US dollars. A missing currency is assumed to match the PO and confidence is lowered.</li>
+      <li>Tolerance is judged on total billing against the PO, so a split PO is judged as a whole.</li>
+      <li>Only approved invoices use up a PO. This is a two-way match: goods receipts are not modelled.</li>
+      <li>Next: three-way matching, an invoice inbox, posting to the ERP, learning from reviewer corrections, sign-in and approval limits.</li></ul></details>
+  `;
+  fillEval();
+}
+async function refreshAI() {
+  try {
+    S.ai = await api('/api/settings');
+    $('#llmstat').textContent = S.ai.provider === 'off' ? 'AI reader: off' : 'AI reader: on';
+    $('#aiBtn').classList.toggle('on', S.ai.provider !== 'off');
+  } catch (e) {}
+}
+document.addEventListener('mouseover', e => {
+  const el = e.target.closest && e.target.closest('[data-tip]'), tip = $('#tip');
+  if (!el || !el.dataset.tip) { tip.hidden = true; return; }
+  tip.textContent = el.dataset.tip; tip.hidden = false;
+  const r = el.getBoundingClientRect(), w = tip.offsetWidth;
+  tip.style.left = Math.max(8, Math.min(r.left, innerWidth - w - 8)) + 'px';
+  tip.style.top = (r.bottom + 6 + tip.offsetHeight > innerHeight ? r.top - tip.offsetHeight - 6 : r.bottom + 6) + 'px';
+});
+function openHow() {
+  $('#howOv').hidden = false; toggleSamples(false); $('#howX').focus();
+  renderHow().catch(() => { $('#how').innerHTML = '<h2 id="howT">How it works</h2><p class="lead">This could not load. The server is probably an older version: stop it with Ctrl+C, start it again, and refresh.</p>'; });
+}
+function closeHow() { $('#howOv').hidden = true; $('#howBtn').focus(); }
+
+/* ------------------------------------------------------------------ chrome */
+function setView(v) {
+  if (v === 'how') return openHow();
+  S.view = v;
+  document.body.classList.toggle('fit', v === 'dashboard' || v === 'pos');
+  clearInterval(S.dashT); if (v === 'dashboard') S.dashT = setInterval(() => { if (!document.hidden) renderDash().catch(() => {}); }, 5000);
+  $$('.view').forEach(x => x.classList.toggle('on', x.id === 'v-' + v));
+  $$('#nav button').forEach(b => b.toggleAttribute('aria-current', b.dataset.view === v) || b.removeAttribute('aria-current'));
+  $$('#nav button').forEach(b => { if (b.dataset.view === v) b.setAttribute('aria-current', 'page'); });
+  if (v === 'dashboard') renderDash(true).catch(e => toast(e.message));
+  if (v === 'pos') renderPOs().catch(e => toast(e.message));
+}
+let toastT;
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 4200); }
+
+document.addEventListener('click', async e => {
+  const t = e.target;
+  const nav = t.closest('#nav button'); if (nav) return setView(nav.dataset.view);
+  const evt = t.closest('[data-evtoggle]'); if (evt) { S.evOpen = !S.evOpen; return renderTape(); }
+  const efr = t.closest('[data-ef]'); if (efr) { S.evOpen = true; S.evField = efr.dataset.ef; return renderTape(); }
+  const stg = t.closest('[data-stage-toggle]'); if (stg) { const k = stg.dataset.stageToggle, st = buildModel(S.events).stages[k]; S.stageToggle[k] = !stageIsOpen(k, st); return renderTape(); }
+  const smp = t.closest('[data-sample]'); if (smp) { toggleSamples(false); setView('process'); return startSample(smp.dataset.sample); }
+  if (t.closest('#samplesBtn')) return toggleSamples($('#samplesMenu').hidden);
+  if (!t.closest('.menu')) toggleSamples(false);
+  if (t.closest('#howBtn')) return openHow();
+  if (t.closest('#howX') || t.id === 'howOv') return closeHow();
+  if (t.closest('#howSamples')) { closeHow(); setView('process'); toggleSamples(true); return; }
+  const ev = t.closest('[data-ev]'); if (ev && ev.hasAttribute('aria-expanded')) {
+    const k = ev.dataset.ev; S.open.has(k) ? S.open.delete(k) : S.open.add(k); return renderTape();
+  }
+  const dp = t.closest('[data-delpo]');
+  if (dp) {
+    const n = dp.dataset.delpo;
+    if (!confirm(`Delete ${n}? Any invoices billed against it are removed from its balance.`)) return;
+    try { await api(`/api/purchase-orders/${encodeURIComponent(n)}`, {method:'DELETE'}); toast(`${n} deleted`); await renderPOs(); } catch (err) { toast(err.message); }
+    return;
+  }
+  if (t.closest('#poAdd')) return openPoForm($('#poform').hidden);
+  if (t.closest('#poCancel')) return openPoForm(false);
+  const row = t.closest('[data-run]'); if (row) return openRun(row.dataset.run);
+  if (t.closest('[data-copy]')) {
+    const txt = `To: ${$('#em-to').value}\nSubject: ${$('#em-sub').value}\n\n${$('#em-body').value}`;
+    try { await navigator.clipboard.writeText(txt); toast('Message copied'); } catch { toast('Could not copy. Select the text and copy it by hand.'); }
+    return;
+  }
+  if (t.closest('[data-mailto]')) {
+    location.href = `mailto:${encodeURIComponent($('#em-to').value.trim())}?subject=${encodeURIComponent($('#em-sub').value)}&body=${encodeURIComponent($('#em-body').value)}`;
+    return;
+  }
+  const ac = t.closest('[data-askchip]'); if (ac) return askQuestion(ac.dataset.askchip);
+  const rv = t.closest('[data-review]');
+  if (rv) {
+    try { await api(`/api/runs/${S.runId}/review`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action:rv.dataset.review, note:$('#rv-note') ? $('#rv-note').value : ''})}); toast(rv.dataset.review === 'approve' ? 'Approved for payment' : 'Invoice rejected'); await openRun(S.runId, false); } catch (err) { toast(err.message); }
+    return;
+  }
+  if (t.closest('[data-reprocess]')) {
+    const c = {}; ['invoice_number','invoice_date','total','po_number'].forEach(k => { const v = $('#fx-' + k).value.trim(); if (v) c[k] = v; });
+    try { const {run_id} = await api(`/api/runs/${S.runId}/reprocess`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({corrections:c})}); await openRun(run_id); } catch (err) { toast(err.message); }
+    return;
+  }
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { if (!$('#howOv').hidden) closeHow(); else toggleSamples(false); } if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('tr[data-run]')) { e.preventDefault(); openRun(e.target.dataset.run); } });
+function applyTheme(t) {
+  if (t) document.documentElement.setAttribute('data-theme', t); else document.documentElement.removeAttribute('data-theme');
+  $('#themeIco').innerHTML = t === 'dark' ? '<circle cx="10" cy="10" r="3.5"/><path d="M10 2.5v2M10 15.5v2M2.5 10h2M15.5 10h2M4.7 4.7l1.4 1.4M13.9 13.9l1.4 1.4M4.7 15.3l1.4-1.4M13.9 6.1l1.4-1.4"/>' : '<path d="M16.5 11.5A6.5 6.5 0 0 1 8.5 3.5a6.5 6.5 0 1 0 8 8z"/>';
+}
+applyTheme(document.documentElement.getAttribute('data-theme'));
+$('#themeBtn').addEventListener('click', () => {
+  const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  applyTheme(next); try { localStorage.setItem('if-theme', next); } catch (e) {}
+});
+$('#poform').addEventListener('submit', submitPO);
+$('#askFab').addEventListener('click', () => { $('#askPane').hidden = false; $('#askFab').hidden = true; paintAsk(); $('#askQ').focus(); });
+$('#askClose').addEventListener('click', () => { $('#askPane').hidden = true; $('#askFab').hidden = false; });
+document.addEventListener('submit', e => { if (e.target.id === 'askForm') { e.preventDefault(); askQuestion($('#askQ').value); } });
+document.addEventListener('input', e => { if (e.target.id === 'em-to' || e.target.id === 'em-body') e.target.dataset.touched = '1'; });
+document.addEventListener('change', async e => {
+  if (e.target.id !== 'askDoc' || !e.target.files[0]) return;
+  const fd = new FormData(); fd.append('file', e.target.files[0]); e.target.value = '';
+  try { const r = await fetch(`/api/runs/${S.runId}/docs`, {method:'POST', body:fd}); if (!r.ok) throw new Error((await r.json()).detail || 'Could not add that file.'); delete S.assist[S.runId]; await hydrateAssist(); toast('Document added. Ask a question about it.'); } catch (err) { toast(err.message); }
+});
+$('#pf-vendor').addEventListener('change', e => { $('#pf-newv').hidden = e.target.value !== '__new__'; });
+const drop = $('#drop');
+$('#file').addEventListener('change', e => { startUpload(e.target.files[0]); e.target.value = ''; });
+['dragenter','dragover'].forEach(n => drop.addEventListener(n, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave','drop'].forEach(n => drop.addEventListener(n, e => { e.preventDefault(); drop.classList.remove('over'); }));
+drop.addEventListener('drop', e => startUpload(e.dataTransfer.files[0]));
+(async function init() {
+  try { const h = await api('/api/health'); if (!(h.version >= 8)) $('#stale').hidden = false; } catch {}
+  refreshAI();
+  await loadSamples().catch(e => toast(e.message));
+  render();
+  const q = new URLSearchParams(location.search);
+  if (q.get('run')) openRun(q.get('run'));
+  if (q.get('view')) setView(q.get('view'));
+})();
+</script>
+</body>
+</html>

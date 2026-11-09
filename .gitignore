@@ -1,0 +1,22 @@
+# Local secrets
+.env
+data/settings.json
+*.key
+*.pem
+!**/cacert.pem
+
+# Generated at runtime (rebuilt automatically on first start)
+data/
+
+# Local environment and scratch files
+.venv/
+.write_test
+.DS_Store
+
+# Unused leftover
+app/mailer.py
+
+# Python and tooling
+__pycache__/
+*.pyc
+.pytest_cache/
