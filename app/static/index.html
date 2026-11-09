@@ -323,6 +323,11 @@ body.fit .view.on{flex:1;min-height:0;display:flex;flex-direction:column}
 .tblbox table.grid .nowrap{white-space:nowrap}
 .tblbox table.grid td.ell{max-width:125px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tblbox table.grid td,.tblbox table.grid th{padding:7px 8px}
+.tblbox table.grid td.wq{max-width:150px;white-space:normal;overflow:visible}
+.tblbox table.grid td.wq b,.tblbox table.grid td.wq .sub{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tblbox table.grid td.wrapc{white-space:normal;line-height:1.3;max-width:110px}
+.tblbox table.grid .num{width:72px;text-align:center;font-variant-numeric:tabular-nums}
+.tblbox{overflow:hidden}
 .tblbox .when{font-size:12.5px}
 .tblbox .pobar{min-width:80px}
 .tblbox .btn{padding:3px 10px;font-size:12.5px}
@@ -882,7 +887,8 @@ function renderSlip() {
 S.assist = {};
 async function hydrateAssist() {
   const id = S.runId, fin = !!(id && $('#aiSum'));
-  $('#askFab').hidden = !fin || !$('#askPane').hidden; if (!fin) { $('#askPane').hidden = true; return; }
+  const onProc = S.view === 'process';
+  $('#askFab').hidden = !fin || !onProc || !$('#askPane').hidden; if (!fin || !onProc) { $('#askPane').hidden = true; if (!fin) return; }
   if (S.askShown !== id) { S.askShown = id; paintAsk(); }
   let a = S.assist[id];
   if (!a) { const sm = $('#aiSum'); if (sm && !sm.textContent) { sm.hidden = false; sm.classList.add('loading'); sm.innerHTML = '<span class="dots"><i></i><i></i><i></i></span>AI is writing a plain-English summary'; } }
@@ -1000,13 +1006,13 @@ async function renderDash(force) {
     </tbody></table></div></div>
     <div class="tblcol">
       <div class="tblbox"><h3>Waiting for a person <span>${st.review_queue.length}</span></h3><div class="scroll"><table class="grid"><thead><tr><th>Invoice</th><th>Why</th><th class="r">Amount</th></tr></thead><tbody>
-        ${st.review_queue.length ? st.review_queue.map(q => `<tr tabindex="0" data-run="${esc(q.id)}"><td class="ell" title="${esc(q.vendor_name || '')}"><b>${esc(q.invoice_number || 'No number')}</b><span class="sub">${esc(q.vendor_name || '')}</span></td><td class="ell" style="max-width:110px">${q.codes[0] ? esc(human(q.codes[0])) : ''}</td><td class="r nowrap">${q.total != null ? esc(num2(q.total)) : ''}</td></tr>`).join('') : none(3, 'Nothing is waiting.')}
+        ${st.review_queue.length ? st.review_queue.map(q => `<tr tabindex="0" data-run="${esc(q.id)}"><td class="ell wq" data-tip="${esc((q.invoice_number || 'No number') + '\n' + (q.vendor_name || ''))}"><b>${esc(q.invoice_number || 'No number')}</b><span class="sub">${esc(q.vendor_name || '')}</span></td><td class="wrapc" data-tip="${esc((q.codes || []).map(human).join('\n'))}">${q.codes[0] ? esc(human(q.codes[0])) : ''}</td><td class="r nowrap">${q.total != null ? esc(num2(q.total)) : ''}</td></tr>`).join('') : none(3, 'Nothing is waiting.')}
       </tbody></table></div></div>
-      <div class="tblbox"><h3>By outcome</h3><div class="scroll"><table class="grid"><thead><tr><th>Outcome</th><th class="r">Invoices</th><th class="r">Amount</th></tr></thead><tbody>
-        ${st.by_outcome.length ? st.by_outcome.map(o => `<tr style="cursor:default"><td><span class="pill ${DEC[o.outcome].cls}">${esc(DEC[o.outcome].label)}</span></td><td class="r">${o.count}</td><td class="r nowrap">${esc(num2(o.amount))}</td></tr>`).join('') : none(3, 'No outcomes yet.')}
+      <div class="tblbox"><h3>By outcome</h3><div class="scroll"><table class="grid"><thead><tr><th>Outcome</th><th class="num">Invoices</th><th class="r">Amount</th></tr></thead><tbody>
+        ${st.by_outcome.length ? st.by_outcome.map(o => `<tr style="cursor:default"><td><span class="pill ${DEC[o.outcome].cls}">${esc(DEC[o.outcome].label)}</span></td><td class="num">${o.count}</td><td class="r nowrap">${esc(num2(o.amount))}</td></tr>`).join('') : none(3, 'No outcomes yet.')}
       </tbody></table></div></div>
-      <div class="tblbox"><h3>Why invoices get flagged</h3><div class="scroll"><table class="grid"><thead><tr><th>Reason</th><th class="r">Invoices</th></tr></thead><tbody>
-        ${st.top_reasons.length ? st.top_reasons.map(r => `<tr style="cursor:default"><td>${esc(human(r.code))}</td><td class="r">${r.count}</td></tr>`).join('') : none(2, 'No flags yet.')}
+      <div class="tblbox"><h3>Why invoices get flagged</h3><div class="scroll"><table class="grid"><thead><tr><th>Reason</th><th class="num">Invoices</th></tr></thead><tbody>
+        ${st.top_reasons.length ? st.top_reasons.map(r => `<tr style="cursor:default"><td>${esc(human(r.code))}</td><td class="num">${r.count}</td></tr>`).join('') : none(2, 'No flags yet.')}
       </tbody></table></div></div>
     </div>
   </div>`;
@@ -1148,6 +1154,9 @@ function setView(v) {
   $$('.view').forEach(x => x.classList.toggle('on', x.id === 'v-' + v));
   $$('#nav button').forEach(b => b.toggleAttribute('aria-current', b.dataset.view === v) || b.removeAttribute('aria-current'));
   $$('#nav button').forEach(b => { if (b.dataset.view === v) b.setAttribute('aria-current', 'page'); });
+  /* the invoice helper belongs to the Process page only */
+  { const fin = !!(S.runId && $('#aiSum')), pane = $('#askPane');
+    if (v !== 'process') { pane.hidden = true; $('#askFab').hidden = true; } else if (fin) { $('#askFab').hidden = !pane.hidden; } }
   if (v === 'dashboard') renderDash(true).catch(e => toast(e.message));
   if (v === 'pos') renderPOs().catch(e => toast(e.message));
 }
@@ -1213,7 +1222,7 @@ $('#themeBtn').addEventListener('click', () => {
 });
 $('#poform').addEventListener('submit', submitPO);
 $('#askFab').addEventListener('click', () => { $('#askPane').hidden = false; $('#askFab').hidden = true; paintAsk(); $('#askQ').focus(); });
-$('#askClose').addEventListener('click', () => { $('#askPane').hidden = true; $('#askFab').hidden = false; });
+$('#askClose').addEventListener('click', () => { $('#askPane').hidden = true; $('#askFab').hidden = S.view !== 'process'; });
 document.addEventListener('submit', e => { if (e.target.id === 'askForm') { e.preventDefault(); askQuestion($('#askQ').value); } });
 document.addEventListener('input', e => { if (e.target.id === 'em-to' || e.target.id === 'em-body') e.target.dataset.touched = '1'; });
 document.addEventListener('change', async e => {
